@@ -86,7 +86,8 @@ export interface BookingConfirmation {
   totalPrice: number;
 }
 
-// Legacy interfaces kept for compatibility
+// Legacy interfaces kept for compatibility - These will be used by
+// BookingConfirmation.tsx for legacy compatibility
 export interface BookingService {
   id: string;
   name: string;

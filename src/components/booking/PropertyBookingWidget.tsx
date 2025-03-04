@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import PropertySelector from './PropertySelector';
 import PricingSummary from './PricingSummary';
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronsRight, Info } from 'lucide-react';
+import { ChevronsRight, Info, CalendarDays, CheckSquare } from 'lucide-react';
 
 const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
   title = "Book Your Stay",
@@ -208,7 +208,12 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
         borderRadius,
         fontFamily,
         ...(primaryColor ? { '--primary': primaryColor } as React.CSSProperties : {}),
-        ...(secondaryColor ? { '--secondary': secondaryColor } as React.CSSProperties : {})
+        ...(secondaryColor ? { '--secondary': secondaryColor } as React.CSSProperties : {}),
+        // Add custom CSS variables for calendar colors
+        '--calendar-selected-bg': '#0EA5E9',
+        '--calendar-selected-text': '#FFFFFF',
+        '--calendar-range-bg': '#D3E4FD',
+        '--calendar-range-text': '#0F172A',
       }}
     >
       <div className="p-6">
@@ -254,7 +259,9 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-sm font-medium mb-3 text-muted-foreground">Select your dates</h3>
+                <h3 className="text-sm font-medium mb-3 text-muted-foreground flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4" /> Select your dates
+                </h3>
                 
                 {isAvailabilityLoading ? (
                   <Skeleton className="w-full h-[320px] rounded-lg animate-pulse-subtle" />
@@ -268,14 +275,15 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
                       }}
                       onSelect={handleDateSelect}
                       numberOfMonths={1}
-                      className="rounded-md border shadow-elegant"
+                      className="rounded-md border shadow-md"
                       classNames={{
-                        day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
-                        day_range_middle: "bg-primary/20 text-foreground hover:bg-primary/30",
-                        day_disabled: "text-muted-foreground opacity-50",
-                        day: "transition-transform hover:scale-105 hover:font-medium",
-                        caption: "font-medium",
-                        nav_button: "hover:bg-muted hover:text-muted-foreground rounded-md transition-transform hover:scale-105"
+                        day_selected: "!bg-[--calendar-selected-bg] !text-[--calendar-selected-text] hover:!bg-[--calendar-selected-bg] hover:!text-[--calendar-selected-text] focus:bg-[--calendar-selected-bg] focus:text-[--calendar-selected-text]",
+                        day_range_middle: "!bg-[--calendar-range-bg] !text-[--calendar-range-text] hover:!bg-[--calendar-range-bg]/90",
+                        day_today: "border border-[--calendar-selected-bg] bg-background text-foreground",
+                        day: "transition-all hover:bg-muted focus:bg-muted h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-md",
+                        caption: "flex justify-center pt-1 relative items-center text-sm font-semibold",
+                        caption_label: "text-sm font-medium grow text-center",
+                        nav_button: "h-7 w-7 bg-transparent p-0 opacity-70 hover:opacity-100 hover:bg-muted rounded-md"
                       }}
                       disabled={(date) => {
                         const today = new Date();
@@ -287,14 +295,15 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
                 )}
 
                 {selectedProperty && dateRange.checkIn && dateRange.checkOut && (
-                  <div className="mt-4 p-3 bg-muted/30 rounded-md text-sm flex items-center justify-between">
-                    <div>
+                  <div className="mt-4 p-3 bg-[--calendar-range-bg]/30 rounded-md text-sm flex items-center justify-between">
+                    <div className="flex items-center">
+                      <CheckSquare className="h-4 w-4 mr-2 text-[--calendar-selected-bg]" />
                       <span>{format(dateRange.checkIn, 'MMM d, yyyy')}</span>
                       <ChevronsRight className="inline-block mx-1 h-4 w-4" />
                       <span>{format(dateRange.checkOut, 'MMM d, yyyy')}</span>
                     </div>
                     <div>
-                      {differenceInDays(dateRange.checkOut, dateRange.checkIn)} nights
+                      <span className="font-medium">{differenceInDays(dateRange.checkOut, dateRange.checkIn)} nights</span>
                     </div>
                   </div>
                 )}

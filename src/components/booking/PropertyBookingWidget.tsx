@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, differenceInDays, isWithinInterval, addDays } from 'date-fns';
 import { BookingWidgetProps, Property, DateRange, PricingDetails, BookingFormData, BookingConfirmation } from '@/types/booking';
@@ -11,7 +10,7 @@ import { toast } from 'sonner';
 import PropertySelector from './PropertySelector';
 import PricingSummary from './PricingSummary';
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronsRight, Info, CalendarDays, CheckSquare } from 'lucide-react';
+import { ChevronsRight, Info, CalendarDays, CheckSquare, X } from 'lucide-react';
 
 const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
   title = "Book Your Stay",
@@ -117,11 +116,21 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
     });
   };
 
+  // Update the handleDateSelect function to allow deselection
   const handleDateSelect = (range: { from?: Date, to?: Date }) => {
     setDateRange({
       checkIn: range.from,
       checkOut: range.to
     });
+  };
+
+  // Add a new function to clear date selection
+  const clearDateSelection = () => {
+    setDateRange({
+      checkIn: undefined,
+      checkOut: undefined
+    });
+    toast.info('Date selection cleared');
   };
 
   const isDateUnavailable = (date: Date) => {
@@ -209,7 +218,7 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
         fontFamily,
         ...(primaryColor ? { '--primary': primaryColor } as React.CSSProperties : {}),
         ...(secondaryColor ? { '--secondary': secondaryColor } as React.CSSProperties : {}),
-        // Add custom CSS variables for calendar colors
+        // Add custom CSS variables for calendar colors using strings
         '--calendar-selected-bg': '#0EA5E9',
         '--calendar-selected-text': '#FFFFFF',
         '--calendar-range-bg': '#D3E4FD',
@@ -294,16 +303,35 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
                   </div>
                 )}
 
-                {selectedProperty && dateRange.checkIn && dateRange.checkOut && (
+                {(dateRange.checkIn || dateRange.checkOut) && (
                   <div className="mt-4 p-3 bg-[--calendar-range-bg]/30 rounded-md text-sm flex items-center justify-between">
                     <div className="flex items-center">
-                      <CheckSquare className="h-4 w-4 mr-2 text-[--calendar-selected-bg]" />
-                      <span>{format(dateRange.checkIn, 'MMM d, yyyy')}</span>
-                      <ChevronsRight className="inline-block mx-1 h-4 w-4" />
-                      <span>{format(dateRange.checkOut, 'MMM d, yyyy')}</span>
+                      {dateRange.checkIn && (
+                        <>
+                          <CheckSquare className="h-4 w-4 mr-2 text-[--calendar-selected-bg]" />
+                          <span>{format(dateRange.checkIn, 'MMM d, yyyy')}</span>
+                        </>
+                      )}
+                      {dateRange.checkIn && dateRange.checkOut && (
+                        <ChevronsRight className="inline-block mx-1 h-4 w-4" />
+                      )}
+                      {dateRange.checkOut && (
+                        <span>{format(dateRange.checkOut, 'MMM d, yyyy')}</span>
+                      )}
                     </div>
-                    <div>
-                      <span className="font-medium">{differenceInDays(dateRange.checkOut, dateRange.checkIn)} nights</span>
+                    <div className="flex items-center gap-2">
+                      {dateRange.checkIn && dateRange.checkOut && (
+                        <span className="font-medium">{differenceInDays(dateRange.checkOut, dateRange.checkIn)} nights</span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearDateSelection}
+                        className="h-6 w-6 p-0 rounded-full"
+                        title="Clear date selection"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 )}

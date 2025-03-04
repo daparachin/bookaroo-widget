@@ -49,10 +49,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
 
     const bookingData: BookingFormData = {
-      ...data,
       serviceId: selectedService.id,
       date: selectedDate.toISOString().split('T')[0],
       timeSlotId: selectedTimeSlot.id,
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      customerPhone: data.customerPhone,
+      notes: data.notes,
     };
 
     onSubmit(bookingData);

@@ -13,32 +13,65 @@ export interface DayAvailability {
   slots?: TimeSlot[];
 }
 
-export interface BookingService {
+// Updated service to represent a property/room
+export interface Property {
   id: string;
   name: string;
   description: string;
-  duration: number;
-  price: number;
+  type: 'room' | 'apartment' | 'house' | 'villa';
+  maxGuests: number;
+  bedrooms: number;
+  bathrooms: number;
+  amenities: string[];
+  basePrice: number;
   image?: string;
+  seasonalPricing?: {
+    [key: string]: number; // Format: "MM-DD": priceMultiplier
+  };
+  extendedStayDiscounts?: {
+    days: number;
+    discountPercentage: number;
+  }[];
 }
 
+// Represents a date range for a booking
+export interface DateRange {
+  checkIn: Date | undefined;
+  checkOut: Date | undefined;
+}
+
+// Pricing details with breakdown
+export interface PricingDetails {
+  basePrice: number;
+  nightsCount: number;
+  seasonalAdjustment: number;
+  discount: number;
+  cleaningFee: number;
+  serviceFee: number;
+  total: number;
+}
+
+// Updated form data for property bookings
 export interface BookingFormData {
-  serviceId: string;
-  date: string;
-  timeSlotId: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  notes?: string;
+  propertyId: string;
+  checkInDate: string; // YYYY-MM-DD format
+  checkOutDate: string; // YYYY-MM-DD format
+  guestCount: number;
+  customerName: string; // Required field
+  customerEmail: string; // Required field
+  customerPhone: string; // Required field
+  specialRequests?: string;
 }
 
 export interface BookingWidgetProps {
   title?: string;
   subtitle?: string;
-  services?: BookingService[];
+  properties?: Property[];
   primaryColor?: string;
+  secondaryColor?: string;
   borderRadius?: string;
-  allowNotes?: boolean;
+  fontFamily?: string;
+  allowSpecialRequests?: boolean;
   apiEndpoint?: string;
   onBookingComplete?: (bookingData: any) => void;
 }
@@ -46,9 +79,19 @@ export interface BookingWidgetProps {
 export interface BookingConfirmation {
   bookingId: string;
   customerName: string;
-  serviceName: string;
-  date: string;
-  startTime: string;
-  endTime: string;
+  propertyName: string;
+  checkInDate: string;
+  checkOutDate: string;
+  guestCount: number;
+  totalPrice: number;
+}
+
+// Legacy interfaces kept for compatibility
+export interface BookingService {
+  id: string;
+  name: string;
+  description: string;
+  duration: number;
   price: number;
+  image?: string;
 }

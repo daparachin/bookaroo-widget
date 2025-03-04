@@ -56,7 +56,50 @@ const sampleProperties: Property[] = [
     seasonalPricing: {
       '12-20': 1.3, // Holiday premium
     }
-  }
+  },
+  {
+    id: 'prop-4',
+    name: 'Beachfront Cottage',
+    description: 'Charming cottage steps away from the beach with stunning sunset views',
+    type: 'house',
+    maxGuests: 4,
+    bedrooms: 2,
+    bathrooms: 1,
+    basePrice: 189,
+    amenities: ['Wi-Fi', 'Kitchen', 'Beach access', 'Patio', 'BBQ'],
+    image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=2070&auto=format&fit=crop',
+    seasonalPricing: {
+      '06-01': 1.35, // Summer premium
+    }
+  },
+  {
+    id: 'prop-5',
+    name: 'Luxury Penthouse',
+    description: 'Upscale penthouse with skyline views, private terrace, and premium amenities',
+    type: 'apartment',
+    maxGuests: 4,
+    bedrooms: 2,
+    bathrooms: 2,
+    basePrice: 399,
+    amenities: ['Wi-Fi', 'Full kitchen', 'Hot tub', 'Gym access', 'Concierge'],
+    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop',
+    extendedStayDiscounts: [
+      { days: 7, discountPercentage: 10 },
+      { days: 14, discountPercentage: 15 },
+    ]
+  },
+  {
+    id: 'prop-6',
+    name: 'Rustic Farm Stay',
+    description: 'Authentic farm experience with modern comforts and beautiful countryside views',
+    type: 'house',
+    maxGuests: 6,
+    bedrooms: 3,
+    bathrooms: 1,
+    basePrice: 145,
+    amenities: ['Wi-Fi', 'Kitchen', 'Fireplace', 'Farm animals', 'Garden'],
+    image: 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=2070&auto=format&fit=crop',
+  },
 ];
 
 const Index = () => {

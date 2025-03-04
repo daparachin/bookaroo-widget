@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, differenceInDays, isWithinInterval, addDays } from 'date-fns';
 import { BookingWidgetProps, Property, DateRange, PricingDetails, BookingFormData, BookingConfirmation } from '@/types/booking';
@@ -218,12 +219,12 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
         fontFamily,
         ...(primaryColor ? { '--primary': primaryColor } as React.CSSProperties : {}),
         ...(secondaryColor ? { '--secondary': secondaryColor } as React.CSSProperties : {}),
-        // Add custom CSS variables for calendar colors using strings
+        // Custom CSS variables as valid CSS properties
         '--calendar-selected-bg': '#0EA5E9',
         '--calendar-selected-text': '#FFFFFF',
         '--calendar-range-bg': '#D3E4FD',
         '--calendar-range-text': '#0F172A',
-      }}
+      } as React.CSSProperties}
     >
       <div className="p-6">
         <div className="text-center mb-6 animate-fade-in">

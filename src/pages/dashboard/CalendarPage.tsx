@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isWeekend } from 'date-fns';
 import { 
@@ -87,7 +86,7 @@ const generateMockAvailability = (date: Date, propertyId: string): AvailabilityC
   const end = endOfMonth(date);
   const days = eachDayOfInterval({ start, end });
   
-  // Create a seed based on the property ID for consistent randomization
+  // Use a deterministic algorithm based on the day and property id
   const seed = parseInt(propertyId.replace(/\D/g, '') || '1', 10);
   
   return days.map(day => {
@@ -95,7 +94,7 @@ const generateMockAvailability = (date: Date, propertyId: string): AvailabilityC
     const dayNum = day.getDate();
     const rand = (seed * dayNum) % 100;
     
-    let status: AvailabilityCalendarEntry['status'] = 'available';
+    let status: 'available' | 'booked' | 'blocked' | 'pending' = 'available';
     
     if (rand < 20) {
       status = 'booked';

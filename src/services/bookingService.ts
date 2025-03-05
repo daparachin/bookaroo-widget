@@ -97,11 +97,17 @@ export const bookingService = {
         const confirmation: BookingConfirmation = {
           bookingId: `booking-${Date.now()}`,
           customerName: bookingData.customerName,
-          serviceName: mockService?.name || "Unknown Service",
+          propertyName: "Sample Property", // Default property name
+          checkInDate: bookingData.date || bookingData.checkInDate || "",
+          checkOutDate: bookingData.checkOutDate || "",
+          guestCount: bookingData.guestCount || 1,
+          totalPrice: mockService?.price || 0,
+          // Legacy fields
+          serviceName: mockService?.name,
           date: bookingData.date,
           startTime: "10:00", // Mock data
           endTime: "11:00",   // Mock data
-          price: mockService?.price || 0
+          price: mockService?.price
         };
         resolve(confirmation);
       }, 1000);

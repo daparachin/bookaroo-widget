@@ -34,6 +34,16 @@ export interface Property {
   }[];
 }
 
+// Backwards compatibility for legacy components
+export interface BookingService {
+  id: string;
+  name: string;
+  description: string;
+  duration: number;
+  price: number;
+  image?: string;
+}
+
 // Represents a date range for a booking
 export interface DateRange {
   checkIn: Date | undefined;
@@ -61,17 +71,24 @@ export interface BookingFormData {
   customerEmail: string; // Required field
   customerPhone: string; // Required field
   specialRequests?: string;
+  // Legacy fields for compatibility
+  serviceId?: string;
+  date?: string;
+  timeSlotId?: string;
+  notes?: string;
 }
 
 export interface BookingWidgetProps {
   title?: string;
   subtitle?: string;
   properties?: Property[];
+  services?: BookingService[]; // For backwards compatibility
   primaryColor?: string;
   secondaryColor?: string;
   borderRadius?: string;
   fontFamily?: string;
   allowSpecialRequests?: boolean;
+  allowNotes?: boolean; // For backwards compatibility
   apiEndpoint?: string;
   onBookingComplete?: (bookingData: any) => void;
 }
@@ -84,15 +101,10 @@ export interface BookingConfirmation {
   checkOutDate: string;
   guestCount: number;
   totalPrice: number;
-}
-
-// Legacy interfaces kept for compatibility - These will be used by
-// BookingConfirmation.tsx for legacy compatibility
-export interface BookingService {
-  id: string;
-  name: string;
-  description: string;
-  duration: number;
-  price: number;
-  image?: string;
+  // Legacy fields for compatibility
+  serviceName?: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  price?: number;
 }

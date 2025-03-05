@@ -1,369 +1,432 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { NotificationPreferences } from '@/types/dashboard';
-import { Separator } from '@/components/ui/separator';
+import { NotificationPreferences } from "@/types/dashboard";
+import { toast } from "sonner";
 
 const SettingsPage: React.FC = () => {
-  const [account, setAccount] = useState({
-    name: 'Vacation Rental Owner',
-    email: 'owner@example.com',
-    phone: '+1 (555) 123-4567',
-    timezone: 'America/Los_Angeles',
-    currency: 'USD',
-  });
-
-  const [notifications, setNotifications] = useState<NotificationPreferences>({
+  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>({
     email: true,
     sms: false,
     newBookingAlert: true,
     bookingCancellationAlert: true,
     paymentReceivedAlert: true,
     lowAvailabilityAlert: false,
-    reportDelivery: 'weekly',
+    reportDelivery: 'weekly'
   });
 
-  const handleAccountChange = (field: string, value: string) => {
-    setAccount({ ...account, [field]: value });
+  const [profile, setProfile] = useState({
+    name: 'Jane Smith',
+    email: 'jane@vacationrentals.com',
+    phone: '+1 (555) 123-4567',
+    company: 'Beachside Rentals LLC',
+    website: 'www.beachsiderentals.com',
+  });
+
+  const [security, setSecurity] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  const [apiKeys, setApiKeys] = useState([
+    { id: 'key-1', name: 'Website Integration', key: 'vr_live_87a54ef32c11', created: '2023-03-15', lastUsed: '2023-10-25' },
+    { id: 'key-2', name: 'Mobile App', key: 'vr_test_3d9f7a12b451', created: '2023-05-21', lastUsed: '2023-10-24' },
+  ]);
+
+  const handleSaveProfile = () => {
+    toast.success('Profile updated successfully');
   };
 
-  const handleNotificationChange = (field: keyof NotificationPreferences, value: any) => {
-    setNotifications({ ...notifications, [field]: value });
+  const handleChangePassword = () => {
+    if (security.newPassword !== security.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
+    if (security.newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    
+    toast.success('Password updated successfully');
+    setSecurity({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
   };
 
-  const handleSaveAccount = () => {
-    console.log('Saving account settings:', account);
-    // This would save to the backend in a real application
+  const handleNotificationChange = (key: keyof NotificationPreferences, value: any) => {
+    setNotificationPreferences(prev => ({
+      ...prev,
+      [key]: value
+    }));
+    
+    toast.success('Notification preferences updated');
   };
 
-  const handleSaveNotifications = () => {
-    console.log('Saving notification settings:', notifications);
-    // This would save to the backend in a real application
+  const generateNewApiKey = () => {
+    const newKey = {
+      id: `key-${apiKeys.length + 1}`,
+      name: 'New Integration',
+      key: `vr_${Math.random().toString(36).substring(2, 15)}`,
+      created: new Date().toISOString().split('T')[0],
+      lastUsed: 'Never'
+    };
+    
+    setApiKeys([...apiKeys, newKey]);
+    toast.success('New API key generated');
+  };
+
+  const revokeApiKey = (id: string) => {
+    setApiKeys(apiKeys.filter(key => key.id !== id));
+    toast.success('API key revoked successfully');
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
       </div>
       
-      <Tabs defaultValue="account">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="account" className="w-full">
+        <TabsList className="grid grid-cols-4 w-full max-w-lg">
           <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="connections">API Connections</TabsTrigger>
+          <TabsTrigger value="api">API</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="account" className="space-y-4">
+        <TabsContent value="account" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Account Information</CardTitle>
               <CardDescription>
-                Update your personal information and preferences
+                Update your account details and preferences
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid w-full items-center gap-1.5">
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={account.name}
-                    onChange={(e) => handleAccountChange('name', e.target.value)}
+                  <Input 
+                    id="name" 
+                    value={profile.name} 
+                    onChange={e => setProfile({...profile, name: e.target.value})}
                   />
                 </div>
                 
-                <div className="grid w-full items-center gap-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={account.email}
-                    onChange={(e) => handleAccountChange('email', e.target.value)}
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={profile.email} 
+                    onChange={e => setProfile({...profile, email: e.target.value})}
                   />
                 </div>
                 
-                <div className="grid w-full items-center gap-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    value={account.phone}
-                    onChange={(e) => handleAccountChange('phone', e.target.value)}
+                  <Input 
+                    id="phone" 
+                    value={profile.phone} 
+                    onChange={e => setProfile({...profile, phone: e.target.value})}
                   />
                 </div>
                 
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Select 
-                    value={account.timezone} 
-                    onValueChange={(value) => handleAccountChange('timezone', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select timezone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                      <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                      <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="company">Company Name</Label>
+                  <Input 
+                    id="company" 
+                    value={profile.company} 
+                    onChange={e => setProfile({...profile, company: e.target.value})}
+                  />
                 </div>
                 
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select 
-                    value={account.currency} 
-                    onValueChange={(value) => handleAccountChange('currency', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">US Dollar (USD)</SelectItem>
-                      <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                      <SelectItem value="GBP">British Pound (GBP)</SelectItem>
-                      <SelectItem value="CAD">Canadian Dollar (CAD)</SelectItem>
-                      <SelectItem value="AUD">Australian Dollar (AUD)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input 
+                    id="website" 
+                    value={profile.website} 
+                    onChange={e => setProfile({...profile, website: e.target.value})}
+                  />
                 </div>
               </div>
               
-              <div className="flex justify-end">
-                <Button onClick={handleSaveAccount}>Save Changes</Button>
-              </div>
+              <Button onClick={handleSaveProfile}>Save Changes</Button>
             </CardContent>
           </Card>
-          
+        </TabsContent>
+        
+        <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Security</CardTitle>
+              <CardTitle>Password & Security</CardTitle>
               <CardDescription>
-                Manage your password and account security
+                Manage your password and security settings
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="current-password">Current Password</Label>
-                <Input id="current-password" type="password" />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="new-password">New Password</Label>
-                  <Input id="new-password" type="password" />
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Input 
+                    id="currentPassword" 
+                    type="password" 
+                    value={security.currentPassword} 
+                    onChange={e => setSecurity({...security, currentPassword: e.target.value})}
+                  />
                 </div>
                 
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="confirm-password">Confirm New Password</Label>
-                  <Input id="confirm-password" type="password" />
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input 
+                    id="newPassword" 
+                    type="password" 
+                    value={security.newPassword} 
+                    onChange={e => setSecurity({...security, newPassword: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input 
+                    id="confirmPassword" 
+                    type="password" 
+                    value={security.confirmPassword} 
+                    onChange={e => setSecurity({...security, confirmPassword: e.target.value})}
+                  />
                 </div>
               </div>
               
-              <div className="flex justify-end">
-                <Button variant="outline">Change Password</Button>
+              <Button onClick={handleChangePassword}>Update Password</Button>
+              
+              <Separator className="my-4" />
+              
+              <div>
+                <h3 className="text-lg font-medium mb-4">Two-Factor Authentication</h3>
+                <div className="flex items-center justify-between bg-muted p-4 rounded-lg">
+                  <div>
+                    <p className="font-medium">Enable 2FA</p>
+                    <p className="text-sm text-muted-foreground">
+                      Add an extra layer of security to your account
+                    </p>
+                  </div>
+                  <Switch checked={false} />
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="notifications" className="space-y-4">
+        <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Notification Preferences</CardTitle>
               <CardDescription>
-                Choose how and when you'd like to be notified
+                Configure how and when you'd like to be notified
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Notification Channels</h3>
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    checked={notifications.email} 
-                    onCheckedChange={(checked) => handleNotificationChange('email', checked)}
-                    id="email-notifications"
-                  />
-                  <Label htmlFor="email-notifications">Email Notifications</Label>
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Notification Channels</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Email Notifications</p>
+                        <p className="text-sm text-muted-foreground">
+                          Receive notifications via email
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={notificationPreferences.email} 
+                        onCheckedChange={checked => handleNotificationChange('email', checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">SMS Notifications</p>
+                        <p className="text-sm text-muted-foreground">
+                          Receive text messages for important events
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={notificationPreferences.sms} 
+                        onCheckedChange={checked => handleNotificationChange('sms', checked)}
+                      />
+                    </div>
+                  </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    checked={notifications.sms} 
-                    onCheckedChange={(checked) => handleNotificationChange('sms', checked)}
-                    id="sms-notifications"
-                  />
-                  <Label htmlFor="sms-notifications">SMS Notifications</Label>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Event Notifications</h3>
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    checked={notifications.newBookingAlert} 
-                    onCheckedChange={(checked) => handleNotificationChange('newBookingAlert', checked)}
-                    id="new-booking-alerts"
-                  />
-                  <Label htmlFor="new-booking-alerts">New Booking Alerts</Label>
+                <Separator />
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Events</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">New Booking Alerts</p>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when a new booking is made
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={notificationPreferences.newBookingAlert} 
+                        onCheckedChange={checked => handleNotificationChange('newBookingAlert', checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Cancellation Alerts</p>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when a booking is canceled
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={notificationPreferences.bookingCancellationAlert} 
+                        onCheckedChange={checked => handleNotificationChange('bookingCancellationAlert', checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Payment Notifications</p>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when a payment is received
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={notificationPreferences.paymentReceivedAlert} 
+                        onCheckedChange={checked => handleNotificationChange('paymentReceivedAlert', checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Low Availability Alerts</p>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when a property has limited availability
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={notificationPreferences.lowAvailabilityAlert} 
+                        onCheckedChange={checked => handleNotificationChange('lowAvailabilityAlert', checked)}
+                      />
+                    </div>
+                  </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    checked={notifications.bookingCancellationAlert} 
-                    onCheckedChange={(checked) => handleNotificationChange('bookingCancellationAlert', checked)}
-                    id="cancellation-alerts"
-                  />
-                  <Label htmlFor="cancellation-alerts">Booking Cancellation Alerts</Label>
-                </div>
+                <Separator />
                 
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    checked={notifications.paymentReceivedAlert} 
-                    onCheckedChange={(checked) => handleNotificationChange('paymentReceivedAlert', checked)}
-                    id="payment-alerts"
-                  />
-                  <Label htmlFor="payment-alerts">Payment Received Alerts</Label>
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Reports</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Booking Summary Reports</p>
+                        <p className="text-sm text-muted-foreground">
+                          Frequency of booking and revenue reports
+                        </p>
+                      </div>
+                      <Select 
+                        value={notificationPreferences.reportDelivery} 
+                        onValueChange={value => handleNotificationChange('reportDelivery', value)}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    checked={notifications.lowAvailabilityAlert} 
-                    onCheckedChange={(checked) => handleNotificationChange('lowAvailabilityAlert', checked)}
-                    id="availability-alerts"
-                  />
-                  <Label htmlFor="availability-alerts">Low Availability Alerts</Label>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Report Delivery</h3>
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="report-delivery">Receive booking reports</Label>
-                  <Select 
-                    value={notifications.reportDelivery} 
-                    onValueChange={(value: any) => handleNotificationChange('reportDelivery', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="never">Never</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button onClick={handleSaveNotifications}>Save Preferences</Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="connections" className="space-y-4">
+        <TabsContent value="api" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>API Connections</CardTitle>
+              <CardTitle>API Access</CardTitle>
               <CardDescription>
-                Connect to third-party services and payment providers
+                Manage API keys for external integrations
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium">Payment Processors</h3>
-                    <p className="text-sm text-muted-foreground">Connect to payment gateways to process bookings</p>
-                  </div>
-                  <Button variant="outline">Configure</Button>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-medium">API Keys</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create and manage API keys for secure access to our API
+                  </p>
                 </div>
-                
-                <div className="p-4 border rounded-md bg-muted/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="font-bold text-primary">S</span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Stripe</h4>
-                        <p className="text-sm text-muted-foreground">Payment processing</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="bg-green-50">Connected</Badge>
-                  </div>
-                </div>
-                
-                <div className="p-4 border rounded-md bg-muted/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="font-bold text-primary">P</span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">PayPal</h4>
-                        <p className="text-sm text-muted-foreground">Alternative payment method</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">Connect</Button>
-                  </div>
-                </div>
+                <Button onClick={generateNewApiKey}>Generate New Key</Button>
               </div>
               
-              <Separator />
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>API Key</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Last Used</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {apiKeys.map(key => (
+                      <TableRow key={key.id}>
+                        <TableCell className="font-medium">{key.name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <code className="bg-muted px-2 py-1 rounded text-xs">
+                              {key.key.substring(0, 8)}...
+                            </code>
+                            <Badge variant="outline">
+                              {key.key.startsWith('vr_live') ? 'Live' : 'Test'}
+                            </Badge>
+                            <Button variant="ghost" size="sm">Copy</Button>
+                          </div>
+                        </TableCell>
+                        <TableCell>{key.created}</TableCell>
+                        <TableCell>{key.lastUsed}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => revokeApiKey(key.id)}
+                          >
+                            Revoke
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium">Channel Managers</h3>
-                    <p className="text-sm text-muted-foreground">Sync availability with other booking platforms</p>
-                  </div>
-                  <Button variant="outline">Configure</Button>
-                </div>
-                
-                <div className="p-4 border rounded-md bg-muted/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="font-bold text-primary">A</span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Airbnb</h4>
-                        <p className="text-sm text-muted-foreground">Sync listings and availability</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">Connect</Button>
-                  </div>
-                </div>
-                
-                <div className="p-4 border rounded-md bg-muted/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="font-bold text-primary">B</span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Booking.com</h4>
-                        <p className="text-sm text-muted-foreground">Sync listings and availability</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">Connect</Button>
-                  </div>
-                </div>
+              <div className="bg-muted p-4 rounded-lg text-sm space-y-2">
+                <p className="font-medium">API Documentation</p>
+                <p>
+                  For information on how to use our API, please refer to our 
+                  <a href="#" className="text-primary hover:underline ml-1">API documentation</a>.
+                </p>
               </div>
             </CardContent>
           </Card>

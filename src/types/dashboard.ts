@@ -49,6 +49,11 @@ export interface AvailabilityCalendarEntry {
 
 // Booking entry with expanded information for admin
 export interface AdminBooking extends BookingConfirmation {
+  id: string; // Primary identifier
+  propertyId: string;
+  guestName: string; // Customer name alias for UI consistency
+  guestEmail: string; // Customer email for UI consistency
+  guestPhone?: string;
   status: 'pending' | 'confirmed' | 'canceled' | 'completed';
   paymentStatus: 'pending' | 'paid' | 'refunded' | 'failed';
   notes?: string;

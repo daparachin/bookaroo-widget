@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isWeekend } from 'date-fns';
 import { 
@@ -228,7 +229,7 @@ const CalendarPage: React.FC = () => {
     // Update the availability data
     const updatedData = availabilityData.map(day => 
       dates.includes(day.date) && day.status !== 'booked'
-        ? { ...day, status: 'blocked' } 
+        ? { ...day, status: 'blocked' as AvailabilityCalendarEntry['status'] } 
         : day
     );
     

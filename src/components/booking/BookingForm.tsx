@@ -49,12 +49,18 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
 
     const bookingData: BookingFormData = {
-      serviceId: selectedService.id,
-      date: selectedDate.toISOString().split('T')[0],
-      timeSlotId: selectedTimeSlot.id,
+      propertyId: selectedService.id, // Use service ID as propertyId for legacy compatibility
+      checkInDate: selectedDate.toISOString().split('T')[0],
+      checkOutDate: selectedDate.toISOString().split('T')[0], // Same day for service bookings
+      guestCount: 1, // Default to 1 guest for service bookings
       customerName: data.customerName,
       customerEmail: data.customerEmail,
       customerPhone: data.customerPhone,
+      specialRequests: data.notes,
+      // Legacy fields for compatibility
+      serviceId: selectedService.id,
+      date: selectedDate.toISOString().split('T')[0],
+      timeSlotId: selectedTimeSlot.id,
       notes: data.notes,
     };
 

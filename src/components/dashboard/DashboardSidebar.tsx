@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+
 import { 
   LayoutDashboard, 
   Home, 
@@ -43,6 +44,7 @@ const DashboardSidebar: React.FC = () => {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
+          
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (

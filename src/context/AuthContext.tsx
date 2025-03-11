@@ -1,9 +1,11 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface AuthContextType {
   user: any;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -36,13 +38,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user);
   };
 
+  const signUp = async (email: string, password: string) => {
+    const { error, data } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    // Note: User won't be automatically signed in until they confirm their email
+    // depending on Supabase project settings
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, signIn, signUp, signOut }}>
       {loading ? <div>Loading...</div> : children}
     </AuthContext.Provider>
   );

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,7 +18,11 @@ import DashboardLayout from "./components/dashboard/DashboardLayout";
 
 // Import AuthContext and Login components
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import Login from "@/components/Login";
+
+// Import i18n
+import "./i18n";
 
 const queryClient = new QueryClient();
 
@@ -58,9 +63,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <SidebarProvider>
-            <AppRoutes />
-          </SidebarProvider>
+          <LanguageProvider>
+            <SidebarProvider>
+              <AppRoutes />
+            </SidebarProvider>
+          </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

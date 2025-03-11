@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { NotificationPreferences } from "@/types/dashboard";
 import { toast } from "sonner";
+import LanguageSelector from "@/components/settings/LanguageSelector";
 
 const SettingsPage: React.FC = () => {
+  const { t } = useTranslation();
+  
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>({
     email: true,
     sms: false,
@@ -96,29 +99,30 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+        <h2 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h2>
       </div>
       
       <Tabs defaultValue="account" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full max-w-lg">
-          <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="api">API</TabsTrigger>
+        <TabsList className="grid grid-cols-5 w-full max-w-lg">
+          <TabsTrigger value="account">{t('settings.account')}</TabsTrigger>
+          <TabsTrigger value="security">{t('settings.security')}</TabsTrigger>
+          <TabsTrigger value="notifications">{t('settings.notifications')}</TabsTrigger>
+          <TabsTrigger value="api">{t('settings.api')}</TabsTrigger>
+          <TabsTrigger value="language">{t('settings.language')}</TabsTrigger>
         </TabsList>
         
         <TabsContent value="account" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Account Information</CardTitle>
+              <CardTitle>{t('settings.accountInfo')}</CardTitle>
               <CardDescription>
-                Update your account details and preferences
+                {t('settings.accountDetails')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">{t('settings.fullName')}</Label>
                   <Input 
                     id="name" 
                     value={profile.name} 
@@ -127,7 +131,7 @@ const SettingsPage: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">{t('settings.emailAddress')}</Label>
                   <Input 
                     id="email" 
                     type="email" 
@@ -137,7 +141,7 @@ const SettingsPage: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">{t('settings.phoneNumber')}</Label>
                   <Input 
                     id="phone" 
                     value={profile.phone} 
@@ -146,7 +150,7 @@ const SettingsPage: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="company">Company Name</Label>
+                  <Label htmlFor="company">{t('settings.companyName')}</Label>
                   <Input 
                     id="company" 
                     value={profile.company} 
@@ -155,7 +159,7 @@ const SettingsPage: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="website">Website</Label>
+                  <Label htmlFor="website">{t('settings.website')}</Label>
                   <Input 
                     id="website" 
                     value={profile.website} 
@@ -164,7 +168,7 @@ const SettingsPage: React.FC = () => {
                 </div>
               </div>
               
-              <Button onClick={handleSaveProfile}>Save Changes</Button>
+              <Button onClick={handleSaveProfile}>{t('common.save')}</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -172,15 +176,15 @@ const SettingsPage: React.FC = () => {
         <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Password & Security</CardTitle>
+              <CardTitle>{t('settings.passwordSecurity')}</CardTitle>
               <CardDescription>
-                Manage your password and security settings
+                {t('settings.securitySettings')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Label htmlFor="currentPassword">{t('settings.currentPassword')}</Label>
                   <Input 
                     id="currentPassword" 
                     type="password" 
@@ -190,7 +194,7 @@ const SettingsPage: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
+                  <Label htmlFor="newPassword">{t('settings.newPassword')}</Label>
                   <Input 
                     id="newPassword" 
                     type="password" 
@@ -200,7 +204,7 @@ const SettingsPage: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Label htmlFor="confirmPassword">{t('settings.confirmPassword')}</Label>
                   <Input 
                     id="confirmPassword" 
                     type="password" 
@@ -210,17 +214,17 @@ const SettingsPage: React.FC = () => {
                 </div>
               </div>
               
-              <Button onClick={handleChangePassword}>Update Password</Button>
+              <Button onClick={handleChangePassword}>{t('common.update')}</Button>
               
               <Separator className="my-4" />
               
               <div>
-                <h3 className="text-lg font-medium mb-4">Two-Factor Authentication</h3>
+                <h3 className="text-lg font-medium mb-4">{t('settings.twoFactorAuthentication')}</h3>
                 <div className="flex items-center justify-between bg-muted p-4 rounded-lg">
                   <div>
-                    <p className="font-medium">Enable 2FA</p>
+                    <p className="font-medium">{t('settings.enable2FA')}</p>
                     <p className="text-sm text-muted-foreground">
-                      Add an extra layer of security to your account
+                      {t('settings.enable2FADescription')}
                     </p>
                   </div>
                   <Switch checked={false} />
@@ -233,21 +237,21 @@ const SettingsPage: React.FC = () => {
         <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
+              <CardTitle>{t('settings.notificationPreferences')}</CardTitle>
               <CardDescription>
-                Configure how and when you'd like to be notified
+                {t('settings.notificationSettings')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-medium mb-3">Notification Channels</h3>
+                  <h3 className="text-lg font-medium mb-3">{t('settings.notificationChannels')}</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">Email Notifications</p>
+                        <p className="font-medium">{t('settings.emailNotifications')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Receive notifications via email
+                          {t('settings.emailNotificationsDescription')}
                         </p>
                       </div>
                       <Switch 
@@ -257,9 +261,9 @@ const SettingsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">SMS Notifications</p>
+                        <p className="font-medium">{t('settings.smsNotifications')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Receive text messages for important events
+                          {t('settings.smsNotificationsDescription')}
                         </p>
                       </div>
                       <Switch 
@@ -273,13 +277,13 @@ const SettingsPage: React.FC = () => {
                 <Separator />
                 
                 <div>
-                  <h3 className="text-lg font-medium mb-3">Events</h3>
+                  <h3 className="text-lg font-medium mb-3">{t('settings.events')}</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">New Booking Alerts</p>
+                        <p className="font-medium">{t('settings.newBookingAlert')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Get notified when a new booking is made
+                          {t('settings.newBookingAlertDescription')}
                         </p>
                       </div>
                       <Switch 
@@ -289,9 +293,9 @@ const SettingsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">Cancellation Alerts</p>
+                        <p className="font-medium">{t('settings.bookingCancellationAlert')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Get notified when a booking is canceled
+                          {t('settings.bookingCancellationAlertDescription')}
                         </p>
                       </div>
                       <Switch 
@@ -301,9 +305,9 @@ const SettingsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">Payment Notifications</p>
+                        <p className="font-medium">{t('settings.paymentReceivedAlert')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Get notified when a payment is received
+                          {t('settings.paymentReceivedAlertDescription')}
                         </p>
                       </div>
                       <Switch 
@@ -313,9 +317,9 @@ const SettingsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">Low Availability Alerts</p>
+                        <p className="font-medium">{t('settings.lowAvailabilityAlert')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Get notified when a property has limited availability
+                          {t('settings.lowAvailabilityAlertDescription')}
                         </p>
                       </div>
                       <Switch 
@@ -329,13 +333,13 @@ const SettingsPage: React.FC = () => {
                 <Separator />
                 
                 <div>
-                  <h3 className="text-lg font-medium mb-3">Reports</h3>
+                  <h3 className="text-lg font-medium mb-3">{t('settings.reports')}</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">Booking Summary Reports</p>
+                        <p className="font-medium">{t('settings.bookingSummaryReports')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Frequency of booking and revenue reports
+                          {t('settings.bookingSummaryReportsDescription')}
                         </p>
                       </div>
                       <Select 
@@ -363,31 +367,31 @@ const SettingsPage: React.FC = () => {
         <TabsContent value="api" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>API Access</CardTitle>
+              <CardTitle>{t('settings.apiAccess')}</CardTitle>
               <CardDescription>
-                Manage API keys for external integrations
+                {t('settings.apiSettings')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-lg font-medium">API Keys</h3>
+                  <h3 className="text-lg font-medium">{t('settings.apiKeys')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Create and manage API keys for secure access to our API
+                    {t('settings.apiKeyDescription')}
                   </p>
                 </div>
-                <Button onClick={generateNewApiKey}>Generate New Key</Button>
+                <Button onClick={generateNewApiKey}>{t('common.generate')}</Button>
               </div>
               
               <div className="border rounded-md">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>API Key</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Last Used</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>{t('settings.name')}</TableHead>
+                      <TableHead>{t('settings.apiKey')}</TableHead>
+                      <TableHead>{t('settings.created')}</TableHead>
+                      <TableHead>{t('settings.lastUsed')}</TableHead>
+                      <TableHead>{t('settings.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -413,7 +417,7 @@ const SettingsPage: React.FC = () => {
                             size="sm"
                             onClick={() => revokeApiKey(key.id)}
                           >
-                            Revoke
+                            {t('common.revoke')}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -423,14 +427,18 @@ const SettingsPage: React.FC = () => {
               </div>
               
               <div className="bg-muted p-4 rounded-lg text-sm space-y-2">
-                <p className="font-medium">API Documentation</p>
+                <p className="font-medium">{t('settings.apiDocumentation')}</p>
                 <p>
-                  For information on how to use our API, please refer to our 
-                  <a href="#" className="text-primary hover:underline ml-1">API documentation</a>.
+                  {t('settings.apiDocumentationDescription')}
+                  <a href="#" className="text-primary hover:underline ml-1">{t('settings.apiDocumentationLink')}</a>.
                 </p>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="language" className="space-y-6">
+          <LanguageSelector />
         </TabsContent>
       </Tabs>
     </div>

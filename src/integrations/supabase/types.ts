@@ -9,7 +9,185 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      _prisma_migrations: {
+        Row: {
+          applied_steps_count: number
+          checksum: string
+          finished_at: string | null
+          id: string
+          logs: string | null
+          migration_name: string
+          rolled_back_at: string | null
+          started_at: string
+        }
+        Insert: {
+          applied_steps_count?: number
+          checksum: string
+          finished_at?: string | null
+          id: string
+          logs?: string | null
+          migration_name: string
+          rolled_back_at?: string | null
+          started_at?: string
+        }
+        Update: {
+          applied_steps_count?: number
+          checksum?: string
+          finished_at?: string | null
+          id?: string
+          logs?: string | null
+          migration_name?: string
+          rolled_back_at?: string | null
+          started_at?: string
+        }
+        Relationships: []
+      }
+      Booking: {
+        Row: {
+          checkIn: string
+          checkOut: string
+          createdAt: string
+          id: string
+          propertyId: string
+          status: Database["public"]["Enums"]["BookingStatus"]
+          userId: string
+        }
+        Insert: {
+          checkIn: string
+          checkOut: string
+          createdAt?: string
+          id: string
+          propertyId: string
+          status?: Database["public"]["Enums"]["BookingStatus"]
+          userId: string
+        }
+        Update: {
+          checkIn?: string
+          checkOut?: string
+          createdAt?: string
+          id?: string
+          propertyId?: string
+          status?: Database["public"]["Enums"]["BookingStatus"]
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Booking_propertyId_fkey"
+            columns: ["propertyId"]
+            isOneToOne: false
+            referencedRelation: "Property"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Booking_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      Payment: {
+        Row: {
+          amount: number
+          bookingId: string
+          createdAt: string
+          id: string
+          status: Database["public"]["Enums"]["PaymentStatus"]
+          userId: string
+        }
+        Insert: {
+          amount: number
+          bookingId: string
+          createdAt?: string
+          id: string
+          status?: Database["public"]["Enums"]["PaymentStatus"]
+          userId: string
+        }
+        Update: {
+          amount?: number
+          bookingId?: string
+          createdAt?: string
+          id?: string
+          status?: Database["public"]["Enums"]["PaymentStatus"]
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Payment_bookingId_fkey"
+            columns: ["bookingId"]
+            isOneToOne: false
+            referencedRelation: "Booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Payment_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      Property: {
+        Row: {
+          createdAt: string
+          id: string
+          location: string
+          name: string
+          ownerId: string
+          pricePerNight: number
+        }
+        Insert: {
+          createdAt?: string
+          id: string
+          location: string
+          name: string
+          ownerId: string
+          pricePerNight: number
+        }
+        Update: {
+          createdAt?: string
+          id?: string
+          location?: string
+          name?: string
+          ownerId?: string
+          pricePerNight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Property_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      User: {
+        Row: {
+          createdAt: string
+          email: string
+          id: string
+          name: string | null
+          role: Database["public"]["Enums"]["Role"]
+        }
+        Insert: {
+          createdAt?: string
+          email: string
+          id: string
+          name?: string | null
+          role?: Database["public"]["Enums"]["Role"]
+        }
+        Update: {
+          createdAt?: string
+          email?: string
+          id?: string
+          name?: string | null
+          role?: Database["public"]["Enums"]["Role"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +196,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      BookingStatus: "PENDING" | "CONFIRMED" | "CANCELED" | "COMPLETED"
+      PaymentStatus: "PENDING" | "COMPLETED" | "FAILED"
+      Role: "USER" | "ADMIN" | "OWNER"
     }
     CompositeTypes: {
       [_ in never]: never

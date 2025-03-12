@@ -132,6 +132,43 @@ const PropertiesPage: React.FC = () => {
 
   const handleSubmit = async (formData: PropertyFormData) => {
     try {
+      // Get the user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('You must be logged in to save a property');
+        return;
+      }
+      
+      // Check if the user exists in the user table
+      const { data: existingUser, error: userCheckError } = await supabase
+        .from('user')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      // If user doesn't exist in user table, create them
+      if (!existingUser && !userCheckError) {
+        const { error: createUserError } = await supabase
+          .from('user')
+          .insert({
+            id: user.id,
+            email: user.email,
+            name: user.user_metadata?.name || user.email,
+            role: 'OWNER'
+          });
+        
+        if (createUserError) {
+          console.error('Error creating user:', createUserError);
+          toast.error('Failed to create user profile');
+          return;
+        }
+      } else if (userCheckError) {
+        console.error('Error checking user:', userCheckError);
+        toast.error('Failed to verify user account');
+        return;
+      }
+      
       if (formData.id) {
         // Update existing property
         const { error } = await supabase
@@ -157,14 +194,6 @@ const PropertiesPage: React.FC = () => {
         toast.success('Property updated successfully');
       } else {
         // Create new property
-        // Get the user's ID
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          toast.error('You must be logged in to create a property');
-          return;
-        }
-        
         const { data, error } = await supabase
           .from('property')
           .insert({

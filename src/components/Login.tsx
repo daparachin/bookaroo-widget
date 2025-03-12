@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Login = () => {
-  const { signIn } = useAuth();
+  const { signIn, signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -21,9 +22,18 @@ const Login = () => {
     setError(null);
 
     try {
-      await signIn(email, password);
+      if (isSignUp) {
+        // Handle sign up
+        await signUp(email, password);
+        toast.success('Account created! Please verify your email if required.');
+      } else {
+        // Handle sign in
+        await signIn(email, password);
+        toast.success('Successfully signed in!');
+      }
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -157,7 +167,7 @@ const Login = () => {
               className="w-full bg-blue-600 hover:bg-blue-700"
               size="lg"
             >
-              {loading ? 'Signing in...' : (isSignUp ? 'Create Account' : 'Sign In')}
+              {loading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Sign In')}
             </Button>
           </form>
           

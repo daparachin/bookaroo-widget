@@ -1,12 +1,14 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: any;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,8 +25,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     // Listen for auth state changes
-    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      
+      if (event === 'SIGNED_IN') {
+        toast.success('Signed in successfully');
+      } else if (event === 'SIGNED_OUT') {
+        toast.info('Signed out');
+      }
     });
 
     return () => {
@@ -41,8 +49,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string) => {
     const { error, data } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
+    
     // Note: User won't be automatically signed in until they confirm their email
     // depending on Supabase project settings
+    if (data.user?.identities?.length === 0) {
+      throw new Error('This email is already registered. Please sign in instead.');
+    }
+    
+    // Check if email confirmation is required
+    if (data.user && !data.session) {
+      toast.info('Please check your email for a confirmation link');
+    }
   };
 
   const signOut = async () => {
@@ -51,8 +68,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signUp, signOut }}>
-      {loading ? <div>Loading...</div> : children}
+    <AuthContext.Provider value={{ user, signIn, signUp, signOut, loading }}>
+      {children}
     </AuthContext.Provider>
   );
 };

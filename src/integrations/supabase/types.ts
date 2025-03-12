@@ -42,6 +42,51 @@ export type Database = {
         }
         Relationships: []
       }
+      booking: {
+        Row: {
+          checkIn: string
+          checkOut: string
+          created_at: string
+          id: string
+          propertyId: string
+          status: Database["public"]["Enums"]["BookingStatus"]
+          userId: string
+        }
+        Insert: {
+          checkIn: string
+          checkOut: string
+          created_at?: string
+          id?: string
+          propertyId: string
+          status?: Database["public"]["Enums"]["BookingStatus"]
+          userId: string
+        }
+        Update: {
+          checkIn?: string
+          checkOut?: string
+          created_at?: string
+          id?: string
+          propertyId?: string
+          status?: Database["public"]["Enums"]["BookingStatus"]
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_propertyId_fkey"
+            columns: ["propertyId"]
+            isOneToOne: false
+            referencedRelation: "property"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Booking: {
         Row: {
           checkIn: string
@@ -83,6 +128,48 @@ export type Database = {
             columns: ["userId"]
             isOneToOne: false
             referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment: {
+        Row: {
+          amount: number
+          bookingId: string
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["PaymentStatus"]
+          userId: string
+        }
+        Insert: {
+          amount: number
+          bookingId: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["PaymentStatus"]
+          userId: string
+        }
+        Update: {
+          amount?: number
+          bookingId?: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["PaymentStatus"]
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_bookingId_fkey"
+            columns: ["bookingId"]
+            isOneToOne: true
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
             referencedColumns: ["id"]
           },
         ]
@@ -129,6 +216,41 @@ export type Database = {
           },
         ]
       }
+      property: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          name: string
+          ownerId: string
+          pricePerNight: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location: string
+          name: string
+          ownerId: string
+          pricePerNight: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          name?: string
+          ownerId?: string
+          pricePerNight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Property: {
         Row: {
           createdAt: string
@@ -163,6 +285,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          role: Database["public"]["Enums"]["Role"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name?: string | null
+          role?: Database["public"]["Enums"]["Role"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          role?: Database["public"]["Enums"]["Role"]
+        }
+        Relationships: []
       }
       User: {
         Row: {

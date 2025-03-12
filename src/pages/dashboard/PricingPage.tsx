@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,87 +8,75 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Property } from '@/types/booking';
 import { toast } from 'sonner';
-
-// Mock data for properties
-const mockProperties: Property[] = [
-  {
-    id: '1',
-    name: 'Luxury Beach House',
-    description: 'Beautiful beachfront property with stunning ocean views',
-    type: 'house',
-    maxGuests: 8,
-    bedrooms: 4,
-    bathrooms: 3,
-    amenities: ['Pool', 'WiFi', 'Kitchen', 'Air conditioning', 'Beach access'],
-    basePrice: 350,
-    seasonalPricing: {
-      "06-01": 1.3,  // Summer premium
-      "07-01": 1.5,  // Peak summer
-      "12-15": 1.2,  // Holiday season
-    },
-    extendedStayDiscounts: [
-      { days: 7, discountPercentage: 5 },
-      { days: 14, discountPercentage: 10 },
-      { days: 30, discountPercentage: 15 },
-    ]
-  },
-  {
-    id: '2',
-    name: 'Downtown Apartment',
-    description: 'Modern apartment in the heart of the city',
-    type: 'apartment',
-    maxGuests: 4,
-    bedrooms: 2,
-    bathrooms: 1,
-    amenities: ['WiFi', 'Kitchen', 'Air conditioning', 'Gym access'],
-    basePrice: 150,
-    seasonalPricing: {
-      "09-01": 1.2,  // Fall conference season
-      "12-15": 1.3,  // Holiday season
-    },
-    extendedStayDiscounts: [
-      { days: 7, discountPercentage: 7 },
-      { days: 30, discountPercentage: 20 },
-    ]
-  },
-  {
-    id: '3',
-    name: 'Mountain Cabin',
-    description: 'Cozy cabin with amazing mountain views',
-    type: 'house',
-    maxGuests: 6,
-    bedrooms: 3,
-    bathrooms: 2,
-    amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Heating', 'Hiking trails'],
-    basePrice: 220,
-    seasonalPricing: {
-      "12-01": 1.4,  // Winter ski season
-      "01-01": 1.5,  // New Year peak
-    },
-    extendedStayDiscounts: [
-      { days: 7, discountPercentage: 5 },
-      { days: 14, discountPercentage: 12 },
-    ]
-  },
-];
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { Loader2 } from 'lucide-react';
 
 const PricingPage: React.FC = () => {
-  const [selectedPropertyId, setSelectedPropertyId] = useState(mockProperties[0].id);
-  const [basePrice, setBasePrice] = useState(mockProperties[0].basePrice);
-  const [seasonalPricing, setSeasonalPricing] = useState<Record<string, number>>(
-    mockProperties[0].seasonalPricing || {}
-  );
-  const [extendedStayDiscounts, setExtendedStayDiscounts] = useState(
-    mockProperties[0].extendedStayDiscounts || []
-  );
+  const { user } = useAuth();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
+  const [basePrice, setBasePrice] = useState(0);
+  const [seasonalPricing, setSeasonalPricing] = useState<Record<string, number>>({});
+  const [extendedStayDiscounts, setExtendedStayDiscounts] = useState<{days: number, discountPercentage: number}[]>([]);
   
   const [newSeasonDate, setNewSeasonDate] = useState('');
   const [newSeasonMultiplier, setNewSeasonMultiplier] = useState(1.2);
   const [newDiscountDays, setNewDiscountDays] = useState(7);
   const [newDiscountPercent, setNewDiscountPercent] = useState(5);
+  const [savingChanges, setSavingChanges] = useState(false);
+  
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchProperties = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('property')
+          .select('*')
+          .eq('ownerId', user.id);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          // Transform the data to match our Property type
+          const formattedProperties: Property[] = data.map(property => ({
+            id: property.id,
+            name: property.name,
+            description: property.location, // Using location as description for now
+            type: 'house', // Default type
+            maxGuests: 4, // Default value
+            bedrooms: 2, // Default value
+            bathrooms: 1, // Default value
+            amenities: [], // Default empty array
+            basePrice: property.pricePerNight,
+            seasonalPricing: property.seasonalPricing || {},
+            extendedStayDiscounts: property.extendedStayDiscounts || []
+          }));
+          
+          setProperties(formattedProperties);
+          
+          if (formattedProperties.length > 0) {
+            setSelectedPropertyId(formattedProperties[0].id);
+            setBasePrice(formattedProperties[0].basePrice);
+            setSeasonalPricing(formattedProperties[0].seasonalPricing || {});
+            setExtendedStayDiscounts(formattedProperties[0].extendedStayDiscounts || []);
+          }
+        }
+      } catch (error: any) {
+        console.error('Error fetching properties:', error);
+        toast.error('Failed to load properties: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProperties();
+  }, [user]);
   
   const handlePropertyChange = (value: string) => {
-    const selectedProperty = mockProperties.find(p => p.id === value);
+    const selectedProperty = properties.find(p => p.id === value);
     if (selectedProperty) {
       setSelectedPropertyId(value);
       setBasePrice(selectedProperty.basePrice);
@@ -104,59 +92,197 @@ const PricingPage: React.FC = () => {
     }
   };
   
-  const handleSaveBasePrice = () => {
-    toast.success(`Base price updated to $${basePrice}`);
+  const handleSaveBasePrice = async () => {
+    if (!user || !selectedPropertyId) return;
+    
+    setSavingChanges(true);
+    try {
+      const { error } = await supabase
+        .from('property')
+        .update({ pricePerNight: basePrice })
+        .eq('id', selectedPropertyId)
+        .eq('ownerId', user.id);
+        
+      if (error) throw error;
+      
+      // Update the local properties state
+      setProperties(properties.map(p => 
+        p.id === selectedPropertyId 
+          ? {...p, basePrice} 
+          : p
+      ));
+      
+      toast.success('Base price updated successfully');
+    } catch (error: any) {
+      console.error('Error updating base price:', error);
+      toast.error('Failed to update base price: ' + error.message);
+    } finally {
+      setSavingChanges(false);
+    }
   };
   
-  const handleAddSeasonalPrice = () => {
+  const handleAddSeasonalPrice = async () => {
+    if (!user || !selectedPropertyId) return;
     if (!newSeasonDate) {
       toast.error('Please select a date');
       return;
     }
     
-    const date = newSeasonDate.split('-').slice(1).join('-');
+    setSavingChanges(true);
     
-    setSeasonalPricing({
-      ...seasonalPricing,
-      [date]: newSeasonMultiplier
-    });
-    
-    setNewSeasonDate('');
-    setNewSeasonMultiplier(1.2);
-    toast.success('Seasonal pricing added');
+    try {
+      const date = newSeasonDate.split('-').slice(1).join('-');
+      const updatedPricing = {
+        ...seasonalPricing,
+        [date]: newSeasonMultiplier
+      };
+      
+      const { error } = await supabase
+        .from('property')
+        .update({ seasonalPricing: updatedPricing })
+        .eq('id', selectedPropertyId)
+        .eq('ownerId', user.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setSeasonalPricing(updatedPricing);
+      
+      // Update the properties array
+      setProperties(properties.map(p => 
+        p.id === selectedPropertyId 
+          ? {...p, seasonalPricing: updatedPricing} 
+          : p
+      ));
+      
+      setNewSeasonDate('');
+      setNewSeasonMultiplier(1.2);
+      toast.success('Seasonal pricing added');
+    } catch (error: any) {
+      console.error('Error adding seasonal price:', error);
+      toast.error('Failed to add seasonal price: ' + error.message);
+    } finally {
+      setSavingChanges(false);
+    }
   };
   
-  const handleRemoveSeasonalPrice = (date: string) => {
-    const updatedPricing = { ...seasonalPricing };
-    delete updatedPricing[date];
-    setSeasonalPricing(updatedPricing);
-    toast.success('Seasonal pricing removed');
+  const handleRemoveSeasonalPrice = async (date: string) => {
+    if (!user || !selectedPropertyId) return;
+    
+    setSavingChanges(true);
+    
+    try {
+      const updatedPricing = { ...seasonalPricing };
+      delete updatedPricing[date];
+      
+      const { error } = await supabase
+        .from('property')
+        .update({ seasonalPricing: updatedPricing })
+        .eq('id', selectedPropertyId)
+        .eq('ownerId', user.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setSeasonalPricing(updatedPricing);
+      
+      // Update the properties array
+      setProperties(properties.map(p => 
+        p.id === selectedPropertyId 
+          ? {...p, seasonalPricing: updatedPricing} 
+          : p
+      ));
+      
+      toast.success('Seasonal pricing removed');
+    } catch (error: any) {
+      console.error('Error removing seasonal price:', error);
+      toast.error('Failed to remove seasonal price: ' + error.message);
+    } finally {
+      setSavingChanges(false);
+    }
   };
   
-  const handleAddDiscount = () => {
+  const handleAddDiscount = async () => {
+    if (!user || !selectedPropertyId) return;
+    
     if (newDiscountDays <= 0 || newDiscountPercent <= 0) {
       toast.error('Please enter valid values');
       return;
     }
     
-    setExtendedStayDiscounts([
-      ...extendedStayDiscounts,
-      {
-        days: newDiscountDays,
-        discountPercentage: newDiscountPercent
-      }
-    ]);
+    setSavingChanges(true);
     
-    setNewDiscountDays(7);
-    setNewDiscountPercent(5);
-    toast.success('Extended stay discount added');
+    try {
+      const updatedDiscounts = [
+        ...extendedStayDiscounts,
+        {
+          days: newDiscountDays,
+          discountPercentage: newDiscountPercent
+        }
+      ];
+      
+      const { error } = await supabase
+        .from('property')
+        .update({ extendedStayDiscounts: updatedDiscounts })
+        .eq('id', selectedPropertyId)
+        .eq('ownerId', user.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setExtendedStayDiscounts(updatedDiscounts);
+      
+      // Update the properties array
+      setProperties(properties.map(p => 
+        p.id === selectedPropertyId 
+          ? {...p, extendedStayDiscounts: updatedDiscounts} 
+          : p
+      ));
+      
+      setNewDiscountDays(7);
+      setNewDiscountPercent(5);
+      toast.success('Extended stay discount added');
+    } catch (error: any) {
+      console.error('Error adding discount:', error);
+      toast.error('Failed to add discount: ' + error.message);
+    } finally {
+      setSavingChanges(false);
+    }
   };
   
-  const handleRemoveDiscount = (days: number) => {
-    setExtendedStayDiscounts(
-      extendedStayDiscounts.filter(discount => discount.days !== days)
-    );
-    toast.success('Discount removed');
+  const handleRemoveDiscount = async (days: number) => {
+    if (!user || !selectedPropertyId) return;
+    
+    setSavingChanges(true);
+    
+    try {
+      const updatedDiscounts = extendedStayDiscounts.filter(discount => discount.days !== days);
+      
+      const { error } = await supabase
+        .from('property')
+        .update({ extendedStayDiscounts: updatedDiscounts })
+        .eq('id', selectedPropertyId)
+        .eq('ownerId', user.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setExtendedStayDiscounts(updatedDiscounts);
+      
+      // Update the properties array
+      setProperties(properties.map(p => 
+        p.id === selectedPropertyId 
+          ? {...p, extendedStayDiscounts: updatedDiscounts} 
+          : p
+      ));
+      
+      toast.success('Discount removed');
+    } catch (error: any) {
+      console.error('Error removing discount:', error);
+      toast.error('Failed to remove discount: ' + error.message);
+    } finally {
+      setSavingChanges(false);
+    }
   };
   
   const formatSeasonDate = (dateString: string) => {
@@ -165,6 +291,36 @@ const PricingPage: React.FC = () => {
                      "July", "August", "September", "October", "November", "December"];
     return `${months[parseInt(month) - 1]} ${parseInt(day)}`;
   };
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading properties...</span>
+      </div>
+    );
+  }
+  
+  if (properties.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-3xl font-bold tracking-tight">Pricing Management</h2>
+        </div>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <h3 className="text-lg font-medium mb-2">No properties found</h3>
+              <p className="text-muted-foreground mb-4">
+                Add a property in the Properties section before setting up pricing.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -178,7 +334,7 @@ const PricingPage: React.FC = () => {
             <SelectValue placeholder="Select property" />
           </SelectTrigger>
           <SelectContent>
-            {mockProperties.map(property => (
+            {properties.map(property => (
               <SelectItem key={property.id} value={property.id}>
                 {property.name}
               </SelectItem>
@@ -210,7 +366,13 @@ const PricingPage: React.FC = () => {
                   />
                 </div>
               </div>
-              <Button onClick={handleSaveBasePrice}>Update</Button>
+              <Button 
+                onClick={handleSaveBasePrice} 
+                disabled={savingChanges}
+              >
+                {savingChanges ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Update
+              </Button>
             </div>
             
             <div className="text-sm text-muted-foreground mt-4">
@@ -254,7 +416,13 @@ const PricingPage: React.FC = () => {
                 </div>
               </div>
               
-              <Button onClick={handleAddSeasonalPrice}>Add</Button>
+              <Button 
+                onClick={handleAddSeasonalPrice}
+                disabled={savingChanges}
+              >
+                {savingChanges ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Add
+              </Button>
             </div>
             
             <div className="border rounded-md overflow-hidden">
@@ -279,7 +447,9 @@ const PricingPage: React.FC = () => {
                             variant="destructive" 
                             size="sm"
                             onClick={() => handleRemoveSeasonalPrice(date)}
+                            disabled={savingChanges}
                           >
+                            {savingChanges ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
                             Remove
                           </Button>
                         </TableCell>
@@ -333,7 +503,13 @@ const PricingPage: React.FC = () => {
                 </div>
               </div>
               
-              <Button onClick={handleAddDiscount}>Add Discount</Button>
+              <Button 
+                onClick={handleAddDiscount}
+                disabled={savingChanges}
+              >
+                {savingChanges ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Add Discount
+              </Button>
             </div>
             
             <div className="border rounded-md overflow-hidden">
@@ -365,7 +541,9 @@ const PricingPage: React.FC = () => {
                               variant="destructive" 
                               size="sm"
                               onClick={() => handleRemoveDiscount(discount.days)}
+                              disabled={savingChanges}
                             >
+                              {savingChanges ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
                               Remove
                             </Button>
                           </TableCell>

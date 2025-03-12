@@ -219,27 +219,33 @@ export type Database = {
       property: {
         Row: {
           created_at: string
+          extendedStayDiscounts: Json | null
           id: string
           location: string
           name: string
           ownerId: string
           pricePerNight: number
+          seasonalPricing: Json | null
         }
         Insert: {
           created_at?: string
+          extendedStayDiscounts?: Json | null
           id?: string
           location: string
           name: string
           ownerId: string
           pricePerNight: number
+          seasonalPricing?: Json | null
         }
         Update: {
           created_at?: string
+          extendedStayDiscounts?: Json | null
           id?: string
           location?: string
           name?: string
           ownerId?: string
           pricePerNight?: number
+          seasonalPricing?: Json | null
         }
         Relationships: [
           {

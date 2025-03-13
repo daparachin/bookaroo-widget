@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, differenceInDays, isWithinInterval, addDays } from 'date-fns';
 import { BookingWidgetProps, Property, DateRange, PricingDetails, BookingFormData, BookingConfirmation } from '@/types/booking';
@@ -35,14 +34,12 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
   const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
 
-  // Fetch availability data when property or dates change
   useEffect(() => {
     if (selectedProperty) {
       fetchAvailability(selectedProperty.id);
     }
   }, [selectedProperty]);
 
-  // Calculate pricing when dates or property change
   useEffect(() => {
     if (selectedProperty && dateRange.checkIn && dateRange.checkOut) {
       calculatePricing();
@@ -54,7 +51,6 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
   const fetchAvailability = async (propertyId: string) => {
     setIsAvailabilityLoading(true);
     try {
-      // Get all non-available dates for the property from the next 90 days
       const today = new Date();
       const endDate = addDays(today, 90);
       
@@ -68,10 +64,8 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
       
       if (error) {
         console.error('Error fetching availability:', error);
-        // If error, we'll just use an empty array (all dates available)
         setUnavailableDates([]);
       } else if (data) {
-        // Convert the dates from strings to Date objects
         const blockedDates = data.map(item => new Date(item.date));
         setUnavailableDates(blockedDates);
       }
@@ -90,7 +84,6 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
     if (nightsCount <= 0) return;
     
     try {
-      // Fetch custom pricing for the date range if available
       const { data, error } = await supabase
         .from('property_availability')
         .select('date, price')
@@ -102,22 +95,18 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
       
       if (error) {
         console.error('Error fetching custom pricing:', error);
-        // If error, fall back to base price calculation
         totalBasePrice = selectedProperty.basePrice * nightsCount;
       } else if (data && data.length > 0) {
-        // Calculate using custom prices where available
         const dateMap = new Map();
         data.forEach(item => {
           dateMap.set(item.date, item.price);
         });
         
-        // Go through each date in the range
         let currentDate = new Date(dateRange.checkIn);
         while (currentDate < dateRange.checkOut) {
           const dateStr = format(currentDate, 'yyyy-MM-dd');
           const customPrice = dateMap.get(dateStr);
           
-          // Use custom price if available, otherwise use base price
           if (customPrice) {
             totalBasePrice += customPrice;
           } else {
@@ -127,20 +116,16 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
           currentDate = addDays(currentDate, 1);
         }
       } else {
-        // No custom prices, use the base price
         totalBasePrice = selectedProperty.basePrice * nightsCount;
       }
       
-      // Calculate seasonal adjustments if available
       let seasonalAdjustment = 0;
       if (selectedProperty.seasonalPricing) {
-        // This is simplified, in a real app you'd check each day in the range
         const checkInMonth = format(dateRange.checkIn, 'MM-dd');
         const multiplier = selectedProperty.seasonalPricing[checkInMonth] || 1;
         seasonalAdjustment = totalBasePrice * (multiplier - 1);
       }
       
-      // Calculate extended stay discount
       let discount = 0;
       if (selectedProperty.extendedStayDiscounts && nightsCount > 0) {
         const applicableDiscount = selectedProperty.extendedStayDiscounts
@@ -152,8 +137,7 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
         }
       }
       
-      // Add fees
-      const cleaningFee = 75; // Fixed fee for example
+      const cleaningFee = 75;
       const serviceFee = ((totalBasePrice + seasonalAdjustment - discount) * 0.1);
       
       const total = totalBasePrice + seasonalAdjustment - discount + cleaningFee + serviceFee;
@@ -173,7 +157,6 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
     }
   };
 
-  // Update the handleDateSelect function to allow deselection
   const handleDateSelect = (range: { from?: Date, to?: Date }) => {
     setDateRange({
       checkIn: range.from,
@@ -181,7 +164,6 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
     });
   };
 
-  // Add a new function to clear date selection
   const clearDateSelection = () => {
     setDateRange({
       checkIn: undefined,
@@ -191,7 +173,6 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
   };
 
   const isDateUnavailable = (date: Date) => {
-    // Check if date is in unavailable dates
     return unavailableDates.some(unavailableDate => 
       unavailableDate.getDate() === date.getDate() &&
       unavailableDate.getMonth() === date.getMonth() &&
@@ -235,7 +216,6 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
     
     setIsSubmitting(true);
     try {
-      // Create the booking in Supabase
       const { data: userData, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
@@ -244,7 +224,6 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
         return;
       }
       
-      // Create the booking record
       const { data: bookingData, error: bookingError } = await supabase
         .from('booking')
         .insert({
@@ -252,7 +231,13 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
           userId: userData.user.id,
           checkIn: new Date(dateRange.checkIn).toISOString(),
           checkOut: new Date(dateRange.checkOut).toISOString(),
-          status: 'PENDING'
+          status: 'PENDING',
+          basePrice: pricingDetails?.basePrice || selectedProperty.basePrice * differenceInDays(dateRange.checkOut, dateRange.checkIn),
+          cleaningFee: pricingDetails?.cleaningFee || 75,
+          serviceFee: pricingDetails?.serviceFee || 0,
+          discount: pricingDetails?.discount || 0,
+          seasonalAdjustment: pricingDetails?.seasonalAdjustment || 0,
+          totalPrice: pricingDetails?.total || selectedProperty.basePrice * differenceInDays(dateRange.checkOut, dateRange.checkIn)
         })
         .select()
         .single();
@@ -264,22 +249,32 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
         return;
       }
       
-      // Mark the dates as booked in property_availability
-      const datesInRange: string[] = [];
       let currentDate = new Date(dateRange.checkIn);
+      const datesInRange: {date: string, price: number}[] = [];
       
       while (currentDate < dateRange.checkOut) {
-        datesInRange.push(format(currentDate, 'yyyy-MM-dd'));
+        let datePrice = selectedProperty.basePrice;
+        
+        if (selectedProperty.seasonalPricing) {
+          const dateKey = format(currentDate, 'MM-dd');
+          const multiplier = selectedProperty.seasonalPricing[dateKey] || 1;
+          datePrice *= multiplier;
+        }
+        
+        datesInRange.push({
+          date: format(currentDate, 'yyyy-MM-dd'),
+          price: datePrice
+        });
+        
         currentDate = addDays(currentDate, 1);
       }
       
-      // Create or update availability entries
-      const availabilityEntries = datesInRange.map(date => ({
+      const availabilityEntries = datesInRange.map(({date, price}) => ({
         property_id: selectedProperty.id,
         date: date,
         status: 'booked',
         booking_id: bookingData.id,
-        price: selectedProperty.basePrice // Using base price for now
+        price: price
       }));
       
       const { error: availabilityError } = await supabase
@@ -290,16 +285,14 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
       
       if (availabilityError) {
         console.error('Error updating availability:', availabilityError);
-        // Don't fail the booking if this fails, just log it
       }
       
-      // Create a successful confirmation
       const confirmation: BookingConfirmation = {
         bookingId: bookingData.id,
-        customerName: formData.get('customerName') as string, // Fixed: use form data
+        customerName: formData.get('customerName') as string,
         propertyName: selectedProperty.name,
-        checkInDate: format(dateRange.checkIn, 'yyyy-MM-dd'), // Fixed: use format function
-        checkOutDate: format(dateRange.checkOut, 'yyyy-MM-dd'), // Fixed: use format function
+        checkInDate: format(dateRange.checkIn, 'yyyy-MM-dd'),
+        checkOutDate: format(dateRange.checkOut, 'yyyy-MM-dd'),
         guestCount: guestCount,
         totalPrice: pricingDetails?.total || 0
       };
@@ -331,7 +324,6 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
         fontFamily,
         ...(primaryColor ? { '--primary': primaryColor } as React.CSSProperties : {}),
         ...(secondaryColor ? { backgroundColor: secondaryColor } as React.CSSProperties : {}),
-        // Custom CSS variables as valid CSS properties
         '--calendar-selected-bg': primaryColor || '#0EA5E9',
         '--calendar-selected-text': '#FFFFFF',
         '--calendar-range-bg': secondaryColor || '#D3E4FD',

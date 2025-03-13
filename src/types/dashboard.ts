@@ -59,6 +59,12 @@ export interface AdminBooking extends BookingConfirmation {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  // Add pricing details
+  basePrice?: number;
+  cleaningFee?: number;
+  serviceFee?: number;
+  discount?: number;
+  seasonalAdjustment?: number;
 }
 
 // User notification preferences

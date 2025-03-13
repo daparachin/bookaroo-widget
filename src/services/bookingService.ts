@@ -94,6 +94,11 @@ export const bookingService = {
     return new Promise((resolve) => {
       setTimeout(() => {
         const mockService = MOCK_SERVICES.find(s => s.id === bookingData.serviceId);
+        const basePrice = mockService?.price || 0;
+        const serviceFee = basePrice * 0.1;
+        const cleaningFee = 75;
+        const totalPrice = basePrice + serviceFee + cleaningFee;
+        
         const confirmation: BookingConfirmation = {
           bookingId: `booking-${Date.now()}`,
           customerName: bookingData.customerName,
@@ -101,7 +106,7 @@ export const bookingService = {
           checkInDate: bookingData.date || bookingData.checkInDate || "",
           checkOutDate: bookingData.checkOutDate || "",
           guestCount: bookingData.guestCount || 1,
-          totalPrice: mockService?.price || 0,
+          totalPrice: totalPrice,
           // Legacy fields
           serviceName: mockService?.name,
           date: bookingData.date,

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isWeekend, parseISO } from 'date-fns';
 import { 
@@ -58,7 +57,6 @@ const CalendarPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   
-  // Fetch properties owned by the user
   useEffect(() => {
     if (!user) return;
     
@@ -66,7 +64,6 @@ const CalendarPage: React.FC = () => {
       try {
         setLoading(true);
         
-        // Check if user exists in user table
         const { data: userData, error: userError } = await supabase
           .from('user')
           .select('id')
@@ -76,7 +73,6 @@ const CalendarPage: React.FC = () => {
         if (userError) {
           console.error('Error checking user:', userError);
           
-          // Create user if it doesn't exist
           if (!userData) {
             const { error: insertError } = await supabase
               .from('user')
@@ -108,11 +104,11 @@ const CalendarPage: React.FC = () => {
         }
         
         if (data && data.length > 0) {
-          const formattedProperties = data.map(prop => ({
+          const formattedProperties: Property[] = data.map(prop => ({
             id: prop.id,
             name: prop.name,
             description: prop.location,
-            type: 'house',
+            type: 'house' as 'house' | 'room' | 'apartment' | 'villa',
             maxGuests: 4,
             bedrooms: 2,
             bathrooms: 1,
@@ -123,7 +119,6 @@ const CalendarPage: React.FC = () => {
           setProperties(formattedProperties);
           setSelectedPropertyId(formattedProperties[0].id);
         } else {
-          // Show mock data if no properties
           setProperties(mockProperties);
           setSelectedPropertyId(mockProperties[0].id);
         }
@@ -139,7 +134,6 @@ const CalendarPage: React.FC = () => {
     fetchProperties();
   }, [user]);
   
-  // Fetch availability data when property or month changes
   useEffect(() => {
     if (!selectedPropertyId) return;
     
@@ -150,7 +144,6 @@ const CalendarPage: React.FC = () => {
         const monthStart = startOfMonth(currentDate);
         const monthEnd = endOfMonth(currentDate);
         
-        // Format dates for the query
         const startDateStr = format(monthStart, 'yyyy-MM-dd');
         const endDateStr = format(monthEnd, 'yyyy-MM-dd');
         
@@ -165,14 +158,12 @@ const CalendarPage: React.FC = () => {
           console.error('Error fetching availability:', error);
           toast.error('Failed to load availability data');
           
-          // Use mock data if we can't fetch
           setAvailabilityData(generateMockAvailability(currentDate, selectedPropertyId));
           setLoading(false);
           return;
         }
         
         if (data && data.length > 0) {
-          // Format the data for our component
           const formattedData = data.map(item => ({
             date: item.date,
             status: item.status as 'available' | 'booked' | 'blocked' | 'pending',
@@ -182,14 +173,11 @@ const CalendarPage: React.FC = () => {
           
           setAvailabilityData(formattedData);
         } else {
-          // If no data exists yet, generate some initial availability
           const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
           const initialAvailability = days.map(day => {
-            // Find if this property has a base price
             const property = properties.find(p => p.id === selectedPropertyId);
             const basePrice = property?.basePrice || 100;
             
-            // Higher prices on weekends
             const price = isWeekend(day) ? basePrice * 1.2 : basePrice;
             
             return {
@@ -275,7 +263,6 @@ const CalendarPage: React.FC = () => {
         .maybeSingle();
         
       if (existingData.data) {
-        // Update existing record
         const { error } = await supabase
           .from('property_availability')
           .update({ 
@@ -290,7 +277,6 @@ const CalendarPage: React.FC = () => {
           return;
         }
       } else {
-        // Insert new record
         const { error } = await supabase
           .from('property_availability')
           .insert({
@@ -307,7 +293,6 @@ const CalendarPage: React.FC = () => {
         }
       }
       
-      // Update local state
       setAvailabilityData(prevData => 
         prevData.map(day => 
           day.date === selectedDay.date 
@@ -339,7 +324,6 @@ const CalendarPage: React.FC = () => {
         .maybeSingle();
         
       if (existingData.data) {
-        // Update existing record
         const { error } = await supabase
           .from('property_availability')
           .update({ 
@@ -354,7 +338,6 @@ const CalendarPage: React.FC = () => {
           return;
         }
       } else {
-        // Insert new record
         const { error } = await supabase
           .from('property_availability')
           .insert({
@@ -371,7 +354,6 @@ const CalendarPage: React.FC = () => {
         }
       }
       
-      // Update local state
       setAvailabilityData(prevData => 
         prevData.map(day => 
           day.date === selectedDay.date 
@@ -400,7 +382,6 @@ const CalendarPage: React.FC = () => {
         format(addDays(startDate, i), 'yyyy-MM-dd')
       );
       
-      // Prepare batch of records to upsert
       const upsertData = datesToBlock.map(date => ({
         property_id: selectedPropertyId,
         date,
@@ -422,7 +403,6 @@ const CalendarPage: React.FC = () => {
         return;
       }
       
-      // Update local state
       setAvailabilityData(prevData => {
         const updatedData = [...prevData];
         
@@ -434,7 +414,6 @@ const CalendarPage: React.FC = () => {
               status: 'blocked' 
             };
           } else {
-            // If date isn't in our current view, we don't need to add it
           }
         });
         
@@ -450,7 +429,6 @@ const CalendarPage: React.FC = () => {
     }
   };
   
-  // Mock data for properties - only used if no properties in database
   const mockProperties: Property[] = [
     {
       id: '1',
@@ -487,17 +465,14 @@ const CalendarPage: React.FC = () => {
     },
   ];
 
-  // Generate mock availability data
   const generateMockAvailability = (date: Date, propertyId: string): AvailabilityCalendarEntry[] => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const days = eachDayOfInterval({ start, end });
     
-    // Use a deterministic algorithm based on the day and property id
     const seed = parseInt(propertyId.replace(/\D/g, '') || '1', 10);
     
     return days.map(day => {
-      // Use a deterministic algorithm based on the day and property id
       const dayNum = day.getDate();
       const rand = (seed * dayNum) % 100;
       
@@ -511,7 +486,6 @@ const CalendarPage: React.FC = () => {
         status = 'pending';
       }
       
-      // Higher prices on weekends
       const price = isWeekend(day) 
         ? properties.find(p => p.id === propertyId)?.basePrice! * 1.2
         : properties.find(p => p.id === propertyId)?.basePrice;
@@ -525,13 +499,11 @@ const CalendarPage: React.FC = () => {
     });
   };
   
-  // Create the calendar grid
   const calendarDays = [];
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
   
-  // Add week day headers
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   
   if (loading && !properties.length) {
@@ -600,7 +572,6 @@ const CalendarPage: React.FC = () => {
               </div>
               
               <div className="grid grid-cols-7 min-h-[600px]">
-                {/* Handle empty cells for days of the week before the start of the month */}
                 {Array.from({ length: monthStart.getDay() }).map((_, index) => (
                   <div key={`empty-start-${index}`} className="border-t bg-muted/20" />
                 ))}
@@ -647,7 +618,6 @@ const CalendarPage: React.FC = () => {
                   );
                 })}
                 
-                {/* Handle empty cells for days of the week after the end of the month */}
                 {Array.from({ length: 6 - monthEnd.getDay() }).map((_, index) => (
                   <div key={`empty-end-${index}`} className="border-t bg-muted/20" />
                 ))}
@@ -676,7 +646,6 @@ const CalendarPage: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Dialog for day details */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>

@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -16,8 +17,8 @@ model User {
   createdAt DateTime @default(now())
 
   bookings  Booking[]
-  properties Property[]  // Fix: Added this to link Properties to User
-  payments   Payment[]   // Fix: Added this to link Payments to User
+  properties Property[]
+  payments   Payment[]
 }
 
 model Property {
@@ -30,6 +31,7 @@ model Property {
 
   owner       User @relation(fields: [ownerId], references: [id])
   bookings    Booking[]
+  availability PropertyAvailability[]
 }
 
 model Booking {
@@ -43,7 +45,8 @@ model Booking {
 
   user       User     @relation(fields: [userId], references: [id])
   property   Property @relation(fields: [propertyId], references: [id])
-  payment    Payment? // Fix: Added this to link Payment to Booking
+  payment    Payment?
+  availability PropertyAvailability[]
 }
 
 model Payment {
@@ -56,6 +59,22 @@ model Payment {
 
   booking    Booking @relation(fields: [bookingId], references: [id])
   user       User    @relation(fields: [userId], references: [id])
+}
+
+model PropertyAvailability {
+  id          String   @id @default(uuid())
+  property_id String
+  date        DateTime @db.Date
+  status      String   @default("available")
+  price       Float?
+  booking_id  String?
+  updated_at  DateTime @default(now())
+
+  property    Property @relation(fields: [property_id], references: [id], onDelete: Cascade)
+  booking     Booking? @relation(fields: [booking_id], references: [id], onDelete: SetNull)
+
+  @@unique([property_id, date])
+  @@map("property_availability")
 }
 
 enum Role {

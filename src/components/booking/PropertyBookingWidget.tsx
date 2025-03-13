@@ -296,10 +296,10 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
       // Create a successful confirmation
       const confirmation: BookingConfirmation = {
         bookingId: bookingData.id,
-        customerName: bookingData.customerName || userData.user.user_metadata?.name || userData.user.email!,
+        customerName: formData.get('customerName') as string, // Fixed: use form data
         propertyName: selectedProperty.name,
-        checkInDate: bookingData.checkInDate || format(dateRange.checkIn, 'yyyy-MM-dd'),
-        checkOutDate: bookingData.checkOutDate || format(dateRange.checkOut, 'yyyy-MM-dd'),
+        checkInDate: format(dateRange.checkIn, 'yyyy-MM-dd'), // Fixed: use format function
+        checkOutDate: format(dateRange.checkOut, 'yyyy-MM-dd'), // Fixed: use format function
         guestCount: guestCount,
         totalPrice: pricingDetails?.total || 0
       };
@@ -330,11 +330,11 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
         borderRadius,
         fontFamily,
         ...(primaryColor ? { '--primary': primaryColor } as React.CSSProperties : {}),
-        ...(secondaryColor ? { '--secondary': secondaryColor } as React.CSSProperties : {}),
+        ...(secondaryColor ? { backgroundColor: secondaryColor } as React.CSSProperties : {}),
         // Custom CSS variables as valid CSS properties
-        '--calendar-selected-bg': '#0EA5E9',
+        '--calendar-selected-bg': primaryColor || '#0EA5E9',
         '--calendar-selected-text': '#FFFFFF',
-        '--calendar-range-bg': '#D3E4FD',
+        '--calendar-range-bg': secondaryColor || '#D3E4FD',
         '--calendar-range-text': '#0F172A',
       } as React.CSSProperties}
     >

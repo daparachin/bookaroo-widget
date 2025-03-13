@@ -81,4 +81,6 @@ export interface WidgetConfig {
   secondaryColor: string;
   allowSpecialRequests: boolean;
   borderRadius: string;
+  fontFamily?: string;
+  apiKey?: string;
 }

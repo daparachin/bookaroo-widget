@@ -292,6 +292,51 @@ export type Database = {
           },
         ]
       }
+      property_availability: {
+        Row: {
+          booking_id: string | null
+          date: string
+          id: string
+          price: number | null
+          property_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          date: string
+          id?: string
+          price?: number | null
+          property_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          date?: string
+          id?: string
+          price?: number | null
+          property_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_availability_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_availability_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user: {
         Row: {
           created_at: string

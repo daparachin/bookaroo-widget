@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isWeekend, parseISO } from 'date-fns';
 import { 
@@ -43,7 +44,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 
 const CalendarPage: React.FC = () => {
@@ -108,10 +109,11 @@ const CalendarPage: React.FC = () => {
             id: prop.id,
             name: prop.name,
             description: prop.location,
-            type: 'house' as 'house' | 'room' | 'apartment' | 'villa',
-            maxGuests: 4,
-            bedrooms: 2,
-            bathrooms: 1,
+            // Cast the type to one of the allowed values
+            type: (prop.type as 'house' | 'room' | 'apartment' | 'villa') || 'house',
+            maxGuests: prop.maxGuests || 4,
+            bedrooms: prop.bedrooms || 2,
+            bathrooms: prop.bathrooms || 1,
             amenities: [],
             basePrice: prop.pricePerNight
           }));

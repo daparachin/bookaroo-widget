@@ -12,6 +12,7 @@ import PropertySelector from './PropertySelector';
 import PricingSummary from './PricingSummary';
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronsRight, Info, CalendarDays, CheckSquare, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
   title = "Book Your Stay",
@@ -53,68 +54,123 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
   const fetchAvailability = async (propertyId: string) => {
     setIsAvailabilityLoading(true);
     try {
-      // Mock API call - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get all non-available dates for the property from the next 90 days
+      const today = new Date();
+      const endDate = addDays(today, 90);
       
-      // Mock unavailable dates - would come from API
-      const blockedDates = [
-        new Date(2024, 2, 10),
-        new Date(2024, 2, 11),
-        new Date(2024, 2, 20),
-        new Date(2024, 2, 21),
-        new Date(2024, 2, 22),
-      ];
-      setUnavailableDates(blockedDates);
+      const { data, error } = await supabase
+        .from('property_availability')
+        .select('*')
+        .eq('property_id', propertyId)
+        .or('status.eq.booked,status.eq.blocked')
+        .gte('date', format(today, 'yyyy-MM-dd'))
+        .lte('date', format(endDate, 'yyyy-MM-dd'));
+      
+      if (error) {
+        console.error('Error fetching availability:', error);
+        // If error, we'll just use an empty array (all dates available)
+        setUnavailableDates([]);
+      } else if (data) {
+        // Convert the dates from strings to Date objects
+        const blockedDates = data.map(item => new Date(item.date));
+        setUnavailableDates(blockedDates);
+      }
     } catch (error) {
-      console.error('Error fetching availability:', error);
+      console.error('Error in fetchAvailability:', error);
       toast.error('Failed to fetch availability. Please try again.');
     } finally {
       setIsAvailabilityLoading(false);
     }
   };
 
-  const calculatePricing = () => {
+  const calculatePricing = async () => {
     if (!selectedProperty || !dateRange.checkIn || !dateRange.checkOut) return;
 
     const nightsCount = differenceInDays(dateRange.checkOut, dateRange.checkIn);
-    const basePrice = selectedProperty.basePrice * nightsCount;
+    if (nightsCount <= 0) return;
     
-    // Calculate seasonal adjustments
-    let seasonalAdjustment = 0;
-    if (selectedProperty.seasonalPricing) {
-      // This is simplified, in a real app you'd check each day in the range
-      const checkInMonth = format(dateRange.checkIn, 'MM-dd');
-      const multiplier = selectedProperty.seasonalPricing[checkInMonth] || 1;
-      seasonalAdjustment = basePrice * (multiplier - 1);
-    }
-    
-    // Calculate extended stay discount
-    let discount = 0;
-    if (selectedProperty.extendedStayDiscounts && nightsCount > 0) {
-      const applicableDiscount = selectedProperty.extendedStayDiscounts
-        .filter(d => nightsCount >= d.days)
-        .sort((a, b) => b.days - a.days)[0];
+    try {
+      // Fetch custom pricing for the date range if available
+      const { data, error } = await supabase
+        .from('property_availability')
+        .select('date, price')
+        .eq('property_id', selectedProperty.id)
+        .gte('date', format(dateRange.checkIn, 'yyyy-MM-dd'))
+        .lt('date', format(dateRange.checkOut, 'yyyy-MM-dd'));
+      
+      let totalBasePrice = 0;
+      
+      if (error) {
+        console.error('Error fetching custom pricing:', error);
+        // If error, fall back to base price calculation
+        totalBasePrice = selectedProperty.basePrice * nightsCount;
+      } else if (data && data.length > 0) {
+        // Calculate using custom prices where available
+        const dateMap = new Map();
+        data.forEach(item => {
+          dateMap.set(item.date, item.price);
+        });
         
-      if (applicableDiscount) {
-        discount = (basePrice + seasonalAdjustment) * (applicableDiscount.discountPercentage / 100);
+        // Go through each date in the range
+        let currentDate = new Date(dateRange.checkIn);
+        while (currentDate < dateRange.checkOut) {
+          const dateStr = format(currentDate, 'yyyy-MM-dd');
+          const customPrice = dateMap.get(dateStr);
+          
+          // Use custom price if available, otherwise use base price
+          if (customPrice) {
+            totalBasePrice += customPrice;
+          } else {
+            totalBasePrice += selectedProperty.basePrice;
+          }
+          
+          currentDate = addDays(currentDate, 1);
+        }
+      } else {
+        // No custom prices, use the base price
+        totalBasePrice = selectedProperty.basePrice * nightsCount;
       }
+      
+      // Calculate seasonal adjustments if available
+      let seasonalAdjustment = 0;
+      if (selectedProperty.seasonalPricing) {
+        // This is simplified, in a real app you'd check each day in the range
+        const checkInMonth = format(dateRange.checkIn, 'MM-dd');
+        const multiplier = selectedProperty.seasonalPricing[checkInMonth] || 1;
+        seasonalAdjustment = totalBasePrice * (multiplier - 1);
+      }
+      
+      // Calculate extended stay discount
+      let discount = 0;
+      if (selectedProperty.extendedStayDiscounts && nightsCount > 0) {
+        const applicableDiscount = selectedProperty.extendedStayDiscounts
+          .filter(d => nightsCount >= d.days)
+          .sort((a, b) => b.days - a.days)[0];
+          
+        if (applicableDiscount) {
+          discount = (totalBasePrice + seasonalAdjustment) * (applicableDiscount.discountPercentage / 100);
+        }
+      }
+      
+      // Add fees
+      const cleaningFee = 75; // Fixed fee for example
+      const serviceFee = ((totalBasePrice + seasonalAdjustment - discount) * 0.1);
+      
+      const total = totalBasePrice + seasonalAdjustment - discount + cleaningFee + serviceFee;
+      
+      setPricingDetails({
+        basePrice: totalBasePrice,
+        nightsCount,
+        seasonalAdjustment,
+        discount,
+        cleaningFee,
+        serviceFee,
+        total
+      });
+    } catch (error) {
+      console.error('Error calculating pricing:', error);
+      toast.error('Failed to calculate pricing. Please try again.');
     }
-    
-    // Add fees
-    const cleaningFee = 75; // Fixed fee for example
-    const serviceFee = ((basePrice + seasonalAdjustment - discount) * 0.1);
-    
-    const total = basePrice + seasonalAdjustment - discount + cleaningFee + serviceFee;
-    
-    setPricingDetails({
-      basePrice,
-      nightsCount,
-      seasonalAdjustment,
-      discount,
-      cleaningFee,
-      serviceFee,
-      total
-    });
   };
 
   // Update the handleDateSelect function to allow deselection
@@ -179,16 +235,72 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
     
     setIsSubmitting(true);
     try {
-      // Mock API call - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Create the booking in Supabase
+      const { data: userData, error: userError } = await supabase.auth.getUser();
       
+      if (userError) {
+        toast.error('You must be logged in to book');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Create the booking record
+      const { data: bookingData, error: bookingError } = await supabase
+        .from('booking')
+        .insert({
+          propertyId: selectedProperty.id,
+          userId: userData.user.id,
+          checkIn: new Date(dateRange.checkIn).toISOString(),
+          checkOut: new Date(dateRange.checkOut).toISOString(),
+          status: 'PENDING'
+        })
+        .select()
+        .single();
+      
+      if (bookingError) {
+        console.error('Error creating booking:', bookingError);
+        toast.error('Failed to create booking. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Mark the dates as booked in property_availability
+      const datesInRange: string[] = [];
+      let currentDate = new Date(dateRange.checkIn);
+      
+      while (currentDate < dateRange.checkOut) {
+        datesInRange.push(format(currentDate, 'yyyy-MM-dd'));
+        currentDate = addDays(currentDate, 1);
+      }
+      
+      // Create or update availability entries
+      const availabilityEntries = datesInRange.map(date => ({
+        property_id: selectedProperty.id,
+        date: date,
+        status: 'booked',
+        booking_id: bookingData.id,
+        price: selectedProperty.basePrice // Using base price for now
+      }));
+      
+      const { error: availabilityError } = await supabase
+        .from('property_availability')
+        .upsert(availabilityEntries, {
+          onConflict: 'property_id,date'
+        });
+      
+      if (availabilityError) {
+        console.error('Error updating availability:', availabilityError);
+        // Don't fail the booking if this fails, just log it
+      }
+      
+      // Create a successful confirmation
       const confirmation: BookingConfirmation = {
-        bookingId: `BK-${Math.floor(Math.random() * 10000)}`,
-        customerName: bookingData.customerName,
+        bookingId: bookingData.id,
+        customerName: bookingData.customerName || userData.user.user_metadata?.name || userData.user.email!,
         propertyName: selectedProperty.name,
-        checkInDate: bookingData.checkInDate,
-        checkOutDate: bookingData.checkOutDate,
-        guestCount: bookingData.guestCount,
+        checkInDate: bookingData.checkInDate || format(dateRange.checkIn, 'yyyy-MM-dd'),
+        checkOutDate: bookingData.checkOutDate || format(dateRange.checkOut, 'yyyy-MM-dd'),
+        guestCount: guestCount,
         totalPrice: pricingDetails?.total || 0
       };
       

@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,50 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Loader2 } from 'lucide-react';
 import { Property } from '@/types/booking';
 import { WidgetConfig } from '@/types/dashboard';
 import { toast } from 'sonner';
-
-// Mock properties data
-const mockProperties: Property[] = [
-  {
-    id: '1',
-    name: 'Luxury Beach House',
-    description: 'Beautiful beachfront property with stunning ocean views',
-    type: 'house',
-    maxGuests: 8,
-    bedrooms: 4,
-    bathrooms: 3,
-    amenities: ['Pool', 'WiFi', 'Kitchen', 'Air conditioning', 'Beach access'],
-    basePrice: 350,
-  },
-  {
-    id: '2',
-    name: 'Downtown Apartment',
-    description: 'Modern apartment in the heart of the city',
-    type: 'apartment',
-    maxGuests: 4,
-    bedrooms: 2,
-    bathrooms: 1,
-    amenities: ['WiFi', 'Kitchen', 'Air conditioning', 'Gym access'],
-    basePrice: 150,
-  },
-  {
-    id: '3',
-    name: 'Mountain Cabin',
-    description: 'Cozy cabin with amazing mountain views',
-    type: 'house',
-    maxGuests: 6,
-    bedrooms: 3,
-    bathrooms: 2,
-    amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Heating', 'Hiking trails'],
-    basePrice: 220,
-  },
-];
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import PropertyBookingWidget from '@/components/booking/PropertyBookingWidget';
 
 const WidgetPage: React.FC = () => {
   const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>({
-    propertyIds: ['1'],
+    propertyIds: [],
     title: 'Book Your Stay',
     subtitle: 'Select dates and check availability',
     primaryColor: '#0f766e',
@@ -61,7 +28,66 @@ const WidgetPage: React.FC = () => {
   });
   
   const [selectedTab, setSelectedTab] = useState('configuration');
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
   const codeRef = useRef<HTMLTextAreaElement>(null);
+  const { user } = useAuth();
+  
+  // Fetch the user's properties from Supabase
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('property')
+          .select('*')
+          .eq('ownerId', user.id);
+          
+        if (error) {
+          console.error('Error fetching properties:', error);
+          toast.error('Failed to load properties');
+          setProperties(mockProperties);
+        } else if (data && data.length > 0) {
+          const formattedProperties: Property[] = data.map(prop => ({
+            id: prop.id,
+            name: prop.name,
+            description: prop.location,
+            type: 'house' as 'house' | 'room' | 'apartment' | 'villa',
+            maxGuests: 4,
+            bedrooms: 2,
+            bathrooms: 1,
+            amenities: ['WiFi', 'Kitchen'],
+            basePrice: prop.pricePerNight
+          }));
+          
+          setProperties(formattedProperties);
+          
+          // Select the first property by default
+          setWidgetConfig(prev => ({
+            ...prev,
+            propertyIds: [formattedProperties[0].id]
+          }));
+        } else {
+          setProperties(mockProperties);
+          setWidgetConfig(prev => ({
+            ...prev,
+            propertyIds: [mockProperties[0].id]
+          }));
+        }
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        toast.error('An unexpected error occurred');
+        setProperties(mockProperties);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProperties();
+  }, [user]);
   
   const handlePropertyToggle = (propertyId: string) => {
     setWidgetConfig(prev => {
@@ -90,6 +116,8 @@ const WidgetPage: React.FC = () => {
   
   // Generate the embed code based on current configuration
   const generateEmbedCode = () => {
+    const host = window.location.origin;
+    
     return `<!-- Vacation Rental Booking Widget -->
 <div id="booking-widget-container"></div>
 
@@ -107,7 +135,7 @@ const WidgetPage: React.FC = () => {
     };
     
     const script = document.createElement('script');
-    script.src = 'https://bookings.example.com/widget.js';
+    script.src = '${host}/widget.js';
     script.onload = function() {
       window.RentalBookingWidget.initialize('booking-widget-container', config);
     };
@@ -115,101 +143,64 @@ const WidgetPage: React.FC = () => {
     
     const style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = 'https://bookings.example.com/widget.css';
+    style.href = '${host}/widget.css';
     document.head.appendChild(style);
   })();
 </script>
 <!-- End Vacation Rental Booking Widget -->`;
   };
   
-  // Preview of what the widget might look like
-  const renderWidgetPreview = () => {
-    return (
-      <div 
-        className="border rounded-lg p-6 max-w-md mx-auto"
-        style={{ 
-          backgroundColor: widgetConfig.secondaryColor,
-          borderRadius: widgetConfig.borderRadius,
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
-        }}
-      >
-        <div className="text-center mb-6">
-          <h3 
-            className="text-xl font-bold mb-1"
-            style={{ color: widgetConfig.primaryColor }}
-          >
-            {widgetConfig.title}
-          </h3>
-          <p className="text-sm text-muted-foreground">{widgetConfig.subtitle}</p>
-        </div>
-        
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="preview-property">Select Property</Label>
-            <Select defaultValue={widgetConfig.propertyIds[0]}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a property" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockProperties
-                  .filter(p => widgetConfig.propertyIds.includes(p.id))
-                  .map(property => (
-                    <SelectItem key={property.id} value={property.id}>
-                      {property.name}
-                    </SelectItem>
-                  ))
-                }
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="preview-checkin">Check-in Date</Label>
-              <Input id="preview-checkin" type="date" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="preview-checkout">Check-out Date</Label>
-              <Input id="preview-checkout" type="date" />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="preview-guests">Number of Guests</Label>
-            <Select defaultValue="2">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 10 }, (_, i) => (
-                  <SelectItem key={i} value={(i + 1).toString()}>
-                    {i + 1} {i === 0 ? 'Guest' : 'Guests'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {widgetConfig.allowSpecialRequests && (
-            <div className="space-y-2">
-              <Label htmlFor="preview-requests">Special Requests</Label>
-              <Input id="preview-requests" placeholder="Any special requests?" />
-            </div>
-          )}
-          
-          <Button 
-            className="w-full"
-            style={{ 
-              backgroundColor: widgetConfig.primaryColor,
-              borderColor: widgetConfig.primaryColor 
-            }}
-          >
-            Check Availability
-          </Button>
-        </div>
-      </div>
+  // Get just the selected properties for the widget preview
+  const getSelectedProperties = () => {
+    return properties.filter(property => 
+      widgetConfig.propertyIds.includes(property.id)
     );
   };
+  
+  // Mock properties for fallback
+  const mockProperties: Property[] = [
+    {
+      id: '1',
+      name: 'Luxury Beach House',
+      description: 'Beautiful beachfront property with stunning ocean views',
+      type: 'house',
+      maxGuests: 8,
+      bedrooms: 4,
+      bathrooms: 3,
+      amenities: ['Pool', 'WiFi', 'Kitchen', 'Air conditioning', 'Beach access'],
+      basePrice: 350,
+    },
+    {
+      id: '2',
+      name: 'Downtown Apartment',
+      description: 'Modern apartment in the heart of the city',
+      type: 'apartment',
+      maxGuests: 4,
+      bedrooms: 2,
+      bathrooms: 1,
+      amenities: ['WiFi', 'Kitchen', 'Air conditioning', 'Gym access'],
+      basePrice: 150,
+    },
+    {
+      id: '3',
+      name: 'Mountain Cabin',
+      description: 'Cozy cabin with amazing mountain views',
+      type: 'house',
+      maxGuests: 6,
+      bedrooms: 3,
+      bathrooms: 2,
+      amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Heating', 'Hiking trails'],
+      basePrice: 220,
+    },
+  ];
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -329,7 +320,7 @@ const WidgetPage: React.FC = () => {
                 </p>
                 
                 <div className="space-y-3">
-                  {mockProperties.map(property => (
+                  {properties.map(property => (
                     <div className="flex items-center justify-between" key={property.id}>
                       <div>
                         <p className="font-medium">{property.name}</p>
@@ -378,7 +369,20 @@ const WidgetPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center py-6">
-              {renderWidgetPreview()}
+              <div className="w-full max-w-3xl">
+                <PropertyBookingWidget
+                  title={widgetConfig.title}
+                  subtitle={widgetConfig.subtitle}
+                  properties={getSelectedProperties()}
+                  primaryColor={widgetConfig.primaryColor}
+                  secondaryColor={widgetConfig.secondaryColor}
+                  borderRadius={widgetConfig.borderRadius}
+                  allowSpecialRequests={widgetConfig.allowSpecialRequests}
+                  onBookingComplete={(confirmation) => {
+                    toast.success(`Test booking created! ID: ${confirmation.bookingId}`);
+                  }}
+                />
+              </div>
             </CardContent>
           </Card>
           

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isWeekend, parseISO } from 'date-fns';
 import { 
@@ -109,11 +108,10 @@ const CalendarPage: React.FC = () => {
             id: prop.id,
             name: prop.name,
             description: prop.location,
-            // Cast the type to one of the allowed values
-            type: (prop.type as 'house' | 'room' | 'apartment' | 'villa') || 'house',
-            maxGuests: prop.maxGuests || 4,
-            bedrooms: prop.bedrooms || 2,
-            bathrooms: prop.bathrooms || 1,
+            type: 'house' as 'house' | 'room' | 'apartment' | 'villa',
+            maxGuests: 4,
+            bedrooms: 2,
+            bathrooms: 1,
             amenities: [],
             basePrice: prop.pricePerNight
           }));

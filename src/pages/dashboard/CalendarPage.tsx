@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isWeekend } from 'date-fns';
+import React, { useState, useEffect } from 'react';
+import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isWeekend, parseISO } from 'date-fns';
 import { 
   Card, 
   CardContent, 
@@ -29,6 +29,7 @@ import {
   Calendar as CalendarIcon,
   Lock, 
   Unlock,
+  Loader2
 } from 'lucide-react';
 import { 
   Dialog,
@@ -43,109 +44,189 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-
-// Mock data - properties
-const mockProperties: Property[] = [
-  {
-    id: '1',
-    name: 'Luxury Beach House',
-    description: 'Beautiful beachfront property with stunning ocean views',
-    type: 'house',
-    maxGuests: 8,
-    bedrooms: 4,
-    bathrooms: 3,
-    amenities: ['Pool', 'WiFi', 'Kitchen', 'Air conditioning', 'Beach access'],
-    basePrice: 350,
-  },
-  {
-    id: '2',
-    name: 'Downtown Apartment',
-    description: 'Modern apartment in the heart of the city',
-    type: 'apartment',
-    maxGuests: 4,
-    bedrooms: 2,
-    bathrooms: 1,
-    amenities: ['WiFi', 'Kitchen', 'Air conditioning', 'Gym access'],
-    basePrice: 150,
-  },
-  {
-    id: '3',
-    name: 'Mountain Cabin',
-    description: 'Cozy cabin with amazing mountain views',
-    type: 'house',
-    maxGuests: 6,
-    bedrooms: 3,
-    bathrooms: 2,
-    amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Heating', 'Hiking trails'],
-    basePrice: 220,
-  },
-];
-
-// Generate mock availability data
-const generateMockAvailability = (date: Date, propertyId: string): AvailabilityCalendarEntry[] => {
-  const start = startOfMonth(date);
-  const end = endOfMonth(date);
-  const days = eachDayOfInterval({ start, end });
-  
-  // Use a deterministic algorithm based on the day and property id
-  const seed = parseInt(propertyId.replace(/\D/g, '') || '1', 10);
-  
-  return days.map(day => {
-    // Use a deterministic algorithm based on the day and property id
-    const dayNum = day.getDate();
-    const rand = (seed * dayNum) % 100;
-    
-    let status: 'available' | 'booked' | 'blocked' | 'pending' = 'available';
-    
-    if (rand < 20) {
-      status = 'booked';
-    } else if (rand < 30) {
-      status = 'blocked';
-    } else if (rand < 35) {
-      status = 'pending';
-    }
-    
-    // Higher prices on weekends
-    const price = isWeekend(day) 
-      ? mockProperties.find(p => p.id === propertyId)?.basePrice! * 1.2
-      : mockProperties.find(p => p.id === propertyId)?.basePrice;
-    
-    return {
-      date: format(day, 'yyyy-MM-dd'),
-      status,
-      price,
-      bookingId: status === 'booked' || status === 'pending' ? `booking-${dayNum}` : undefined
-    };
-  });
-};
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 const CalendarPage: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedPropertyId, setSelectedPropertyId] = useState(mockProperties[0].id);
-  const [availabilityData, setAvailabilityData] = useState<AvailabilityCalendarEntry[]>(
-    generateMockAvailability(currentDate, selectedPropertyId)
-  );
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
+  const [availabilityData, setAvailabilityData] = useState<AvailabilityCalendarEntry[]>([]);
   const [selectedDay, setSelectedDay] = useState<AvailabilityCalendarEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [customPrice, setCustomPrice] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  
+  // Fetch properties owned by the user
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        
+        // Check if user exists in user table
+        const { data: userData, error: userError } = await supabase
+          .from('user')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
+          
+        if (userError) {
+          console.error('Error checking user:', userError);
+          
+          // Create user if it doesn't exist
+          if (!userData) {
+            const { error: insertError } = await supabase
+              .from('user')
+              .insert({
+                id: user.id,
+                email: user.email,
+                name: user.user_metadata?.name || user.email,
+              });
+              
+            if (insertError) {
+              console.error('Error creating user:', insertError);
+              toast.error('Failed to initialize user data');
+              setLoading(false);
+              return;
+            }
+          }
+        }
+        
+        const { data, error } = await supabase
+          .from('property')
+          .select('*')
+          .eq('ownerId', user.id);
+          
+        if (error) {
+          console.error('Error fetching properties:', error);
+          toast.error('Failed to load properties');
+          setLoading(false);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          const formattedProperties = data.map(prop => ({
+            id: prop.id,
+            name: prop.name,
+            description: prop.location,
+            type: 'house',
+            maxGuests: 4,
+            bedrooms: 2,
+            bathrooms: 1,
+            amenities: [],
+            basePrice: prop.pricePerNight
+          }));
+          
+          setProperties(formattedProperties);
+          setSelectedPropertyId(formattedProperties[0].id);
+        } else {
+          // Show mock data if no properties
+          setProperties(mockProperties);
+          setSelectedPropertyId(mockProperties[0].id);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        toast.error('An unexpected error occurred');
+        setLoading(false);
+      }
+    };
+    
+    fetchProperties();
+  }, [user]);
+  
+  // Fetch availability data when property or month changes
+  useEffect(() => {
+    if (!selectedPropertyId) return;
+    
+    const fetchAvailability = async () => {
+      try {
+        setLoading(true);
+        
+        const monthStart = startOfMonth(currentDate);
+        const monthEnd = endOfMonth(currentDate);
+        
+        // Format dates for the query
+        const startDateStr = format(monthStart, 'yyyy-MM-dd');
+        const endDateStr = format(monthEnd, 'yyyy-MM-dd');
+        
+        const { data, error } = await supabase
+          .from('property_availability')
+          .select('*')
+          .eq('property_id', selectedPropertyId)
+          .gte('date', startDateStr)
+          .lte('date', endDateStr);
+          
+        if (error) {
+          console.error('Error fetching availability:', error);
+          toast.error('Failed to load availability data');
+          
+          // Use mock data if we can't fetch
+          setAvailabilityData(generateMockAvailability(currentDate, selectedPropertyId));
+          setLoading(false);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          // Format the data for our component
+          const formattedData = data.map(item => ({
+            date: item.date,
+            status: item.status as 'available' | 'booked' | 'blocked' | 'pending',
+            price: item.price,
+            bookingId: item.booking_id
+          }));
+          
+          setAvailabilityData(formattedData);
+        } else {
+          // If no data exists yet, generate some initial availability
+          const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+          const initialAvailability = days.map(day => {
+            // Find if this property has a base price
+            const property = properties.find(p => p.id === selectedPropertyId);
+            const basePrice = property?.basePrice || 100;
+            
+            // Higher prices on weekends
+            const price = isWeekend(day) ? basePrice * 1.2 : basePrice;
+            
+            return {
+              date: format(day, 'yyyy-MM-dd'),
+              status: 'available' as 'available' | 'booked' | 'blocked' | 'pending',
+              price,
+            };
+          });
+          
+          setAvailabilityData(initialAvailability);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        toast.error('An unexpected error occurred');
+        setLoading(false);
+      }
+    };
+    
+    fetchAvailability();
+  }, [selectedPropertyId, currentDate, properties]);
   
   const handlePropertyChange = (value: string) => {
     setSelectedPropertyId(value);
-    setAvailabilityData(generateMockAvailability(currentDate, value));
   };
   
   const handlePreviousMonth = () => {
     const newDate = new Date(currentDate);
     newDate.setMonth(newDate.getMonth() - 1);
     setCurrentDate(newDate);
-    setAvailabilityData(generateMockAvailability(newDate, selectedPropertyId));
   };
   
   const handleNextMonth = () => {
     const newDate = new Date(currentDate);
     newDate.setMonth(newDate.getMonth() + 1);
     setCurrentDate(newDate);
-    setAvailabilityData(generateMockAvailability(newDate, selectedPropertyId));
   };
   
   const handleDayClick = (day: AvailabilityCalendarEntry) => {
@@ -182,61 +263,266 @@ const CalendarPage: React.FC = () => {
     }
   };
   
-  const handleUpdateStatus = (newStatus: AvailabilityCalendarEntry['status']) => {
-    if (!selectedDay) return;
+  const handleUpdateStatus = async (newStatus: AvailabilityCalendarEntry['status']) => {
+    if (!selectedDay || !selectedPropertyId) return;
     
-    // Update the availability data
-    const updatedData = availabilityData.map(day => 
-      day.date === selectedDay.date 
-        ? { ...day, status: newStatus } 
-        : day
-    );
-    
-    setAvailabilityData(updatedData);
-    setIsDialogOpen(false);
-    
-    toast.success(`Day status updated to ${newStatus}`, {
-      description: `${format(new Date(selectedDay.date), 'MMMM d, yyyy')}`
-    });
+    try {
+      const existingData = await supabase
+        .from('property_availability')
+        .select('id')
+        .eq('property_id', selectedPropertyId)
+        .eq('date', selectedDay.date)
+        .maybeSingle();
+        
+      if (existingData.data) {
+        // Update existing record
+        const { error } = await supabase
+          .from('property_availability')
+          .update({ 
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingData.data.id);
+          
+        if (error) {
+          console.error('Error updating availability:', error);
+          toast.error('Failed to update day status');
+          return;
+        }
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('property_availability')
+          .insert({
+            property_id: selectedPropertyId,
+            date: selectedDay.date,
+            status: newStatus,
+            price: selectedDay.price
+          });
+          
+        if (error) {
+          console.error('Error creating availability:', error);
+          toast.error('Failed to update day status');
+          return;
+        }
+      }
+      
+      // Update local state
+      setAvailabilityData(prevData => 
+        prevData.map(day => 
+          day.date === selectedDay.date 
+            ? { ...day, status: newStatus } 
+            : day
+        )
+      );
+      
+      setIsDialogOpen(false);
+      
+      toast.success(`Day status updated to ${newStatus}`, {
+        description: `${format(new Date(selectedDay.date), 'MMMM d, yyyy')}`
+      });
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
+    }
   };
   
-  const handleUpdatePrice = () => {
-    if (!selectedDay || customPrice === null) return;
+  const handleUpdatePrice = async () => {
+    if (!selectedDay || customPrice === null || !selectedPropertyId) return;
     
-    // Update the availability data
-    const updatedData = availabilityData.map(day => 
-      day.date === selectedDay.date 
-        ? { ...day, price: customPrice } 
-        : day
-    );
-    
-    setAvailabilityData(updatedData);
-    setIsDialogOpen(false);
-    
-    toast.success(`Price updated for ${format(new Date(selectedDay.date), 'MMMM d, yyyy')}`, {
-      description: `New price: $${customPrice}`
-    });
+    try {
+      const existingData = await supabase
+        .from('property_availability')
+        .select('id')
+        .eq('property_id', selectedPropertyId)
+        .eq('date', selectedDay.date)
+        .maybeSingle();
+        
+      if (existingData.data) {
+        // Update existing record
+        const { error } = await supabase
+          .from('property_availability')
+          .update({ 
+            price: customPrice,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingData.data.id);
+          
+        if (error) {
+          console.error('Error updating price:', error);
+          toast.error('Failed to update price');
+          return;
+        }
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('property_availability')
+          .insert({
+            property_id: selectedPropertyId,
+            date: selectedDay.date,
+            status: selectedDay.status,
+            price: customPrice
+          });
+          
+        if (error) {
+          console.error('Error creating availability with price:', error);
+          toast.error('Failed to update price');
+          return;
+        }
+      }
+      
+      // Update local state
+      setAvailabilityData(prevData => 
+        prevData.map(day => 
+          day.date === selectedDay.date 
+            ? { ...day, price: customPrice } 
+            : day
+        )
+      );
+      
+      setIsDialogOpen(false);
+      
+      toast.success(`Price updated for ${format(new Date(selectedDay.date), 'MMMM d, yyyy')}`, {
+        description: `New price: $${customPrice}`
+      });
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
+    }
   };
   
-  const handleBlockRange = (days: number) => {
-    if (!selectedDay) return;
+  const handleBlockRange = async (days: number) => {
+    if (!selectedDay || !selectedPropertyId) return;
     
-    const startDate = new Date(selectedDay.date);
-    const dates = Array.from({ length: days }, (_, i) => 
-      format(addDays(startDate, i), 'yyyy-MM-dd')
-    );
+    try {
+      const startDate = new Date(selectedDay.date);
+      const datesToBlock = Array.from({ length: days }, (_, i) => 
+        format(addDays(startDate, i), 'yyyy-MM-dd')
+      );
+      
+      // Prepare batch of records to upsert
+      const upsertData = datesToBlock.map(date => ({
+        property_id: selectedPropertyId,
+        date,
+        status: 'blocked',
+        price: availabilityData.find(d => d.date === date)?.price || 
+               properties.find(p => p.id === selectedPropertyId)?.basePrice || 100
+      }));
+      
+      const { error } = await supabase
+        .from('property_availability')
+        .upsert(upsertData, { 
+          onConflict: 'property_id,date',
+          ignoreDuplicates: false
+        });
+        
+      if (error) {
+        console.error('Error blocking dates:', error);
+        toast.error('Failed to block dates');
+        return;
+      }
+      
+      // Update local state
+      setAvailabilityData(prevData => {
+        const updatedData = [...prevData];
+        
+        datesToBlock.forEach(date => {
+          const index = updatedData.findIndex(d => d.date === date);
+          if (index !== -1) {
+            updatedData[index] = { 
+              ...updatedData[index], 
+              status: 'blocked' 
+            };
+          } else {
+            // If date isn't in our current view, we don't need to add it
+          }
+        });
+        
+        return updatedData;
+      });
+      
+      setIsDialogOpen(false);
+      
+      toast.success(`Blocked ${days} days starting from ${format(startDate, 'MMMM d, yyyy')}`);
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
+    }
+  };
+  
+  // Mock data for properties - only used if no properties in database
+  const mockProperties: Property[] = [
+    {
+      id: '1',
+      name: 'Luxury Beach House',
+      description: 'Beautiful beachfront property with stunning ocean views',
+      type: 'house',
+      maxGuests: 8,
+      bedrooms: 4,
+      bathrooms: 3,
+      amenities: ['Pool', 'WiFi', 'Kitchen', 'Air conditioning', 'Beach access'],
+      basePrice: 350,
+    },
+    {
+      id: '2',
+      name: 'Downtown Apartment',
+      description: 'Modern apartment in the heart of the city',
+      type: 'apartment',
+      maxGuests: 4,
+      bedrooms: 2,
+      bathrooms: 1,
+      amenities: ['WiFi', 'Kitchen', 'Air conditioning', 'Gym access'],
+      basePrice: 150,
+    },
+    {
+      id: '3',
+      name: 'Mountain Cabin',
+      description: 'Cozy cabin with amazing mountain views',
+      type: 'house',
+      maxGuests: 6,
+      bedrooms: 3,
+      bathrooms: 2,
+      amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Heating', 'Hiking trails'],
+      basePrice: 220,
+    },
+  ];
+
+  // Generate mock availability data
+  const generateMockAvailability = (date: Date, propertyId: string): AvailabilityCalendarEntry[] => {
+    const start = startOfMonth(date);
+    const end = endOfMonth(date);
+    const days = eachDayOfInterval({ start, end });
     
-    // Update the availability data
-    const updatedData = availabilityData.map(day => 
-      dates.includes(day.date) && day.status !== 'booked'
-        ? { ...day, status: 'blocked' as AvailabilityCalendarEntry['status'] } 
-        : day
-    );
+    // Use a deterministic algorithm based on the day and property id
+    const seed = parseInt(propertyId.replace(/\D/g, '') || '1', 10);
     
-    setAvailabilityData(updatedData);
-    setIsDialogOpen(false);
-    
-    toast.success(`Blocked ${days} days starting from ${format(startDate, 'MMMM d, yyyy')}`);
+    return days.map(day => {
+      // Use a deterministic algorithm based on the day and property id
+      const dayNum = day.getDate();
+      const rand = (seed * dayNum) % 100;
+      
+      let status: 'available' | 'booked' | 'blocked' | 'pending' = 'available';
+      
+      if (rand < 20) {
+        status = 'booked';
+      } else if (rand < 30) {
+        status = 'blocked';
+      } else if (rand < 35) {
+        status = 'pending';
+      }
+      
+      // Higher prices on weekends
+      const price = isWeekend(day) 
+        ? properties.find(p => p.id === propertyId)?.basePrice! * 1.2
+        : properties.find(p => p.id === propertyId)?.basePrice;
+      
+      return {
+        date: format(day, 'yyyy-MM-dd'),
+        status,
+        price,
+        bookingId: status === 'booked' || status === 'pending' ? `booking-${dayNum}` : undefined
+      };
+    });
   };
   
   // Create the calendar grid
@@ -247,6 +533,14 @@ const CalendarPage: React.FC = () => {
   
   // Add week day headers
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  if (loading && !properties.length) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -261,7 +555,7 @@ const CalendarPage: React.FC = () => {
               <SelectValue placeholder="Select property" />
             </SelectTrigger>
             <SelectContent>
-              {mockProperties.map(property => (
+              {properties.map(property => (
                 <SelectItem key={property.id} value={property.id}>
                   {property.name}
                 </SelectItem>
@@ -287,71 +581,79 @@ const CalendarPage: React.FC = () => {
         <CardHeader className="pb-2">
           <CardTitle>Availability Calendar</CardTitle>
           <CardDescription>
-            Manage availability, bookings, and pricing for {mockProperties.find(p => p.id === selectedPropertyId)?.name}
+            Manage availability, bookings, and pricing for {properties.find(p => p.id === selectedPropertyId)?.name}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="border rounded-lg overflow-hidden">
-            <div className="grid grid-cols-7 bg-muted">
-              {weekDays.map(day => (
-                <div key={day} className="py-2 text-center font-medium text-sm">
-                  {day}
-                </div>
-              ))}
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-            
-            <div className="grid grid-cols-7 min-h-[600px]">
-              {/* Handle empty cells for days of the week before the start of the month */}
-              {Array.from({ length: monthStart.getDay() }).map((_, index) => (
-                <div key={`empty-start-${index}`} className="border-t bg-muted/20" />
-              ))}
+          ) : (
+            <div className="border rounded-lg overflow-hidden">
+              <div className="grid grid-cols-7 bg-muted">
+                {weekDays.map(day => (
+                  <div key={day} className="py-2 text-center font-medium text-sm">
+                    {day}
+                  </div>
+                ))}
+              </div>
               
-              {daysInMonth.map(day => {
-                const dateString = format(day, 'yyyy-MM-dd');
-                const dayData = availabilityData.find(d => d.date === dateString) || {
-                  date: dateString,
-                  status: 'available'
-                };
+              <div className="grid grid-cols-7 min-h-[600px]">
+                {/* Handle empty cells for days of the week before the start of the month */}
+                {Array.from({ length: monthStart.getDay() }).map((_, index) => (
+                  <div key={`empty-start-${index}`} className="border-t bg-muted/20" />
+                ))}
                 
-                return (
-                  <div 
-                    key={dateString} 
-                    className={getDayClass(dayData)}
-                    onClick={() => handleDayClick(dayData)}
-                  >
-                    <div className="text-right mb-1">
-                      <span className="text-sm font-medium">
-                        {format(day, 'd')}
-                      </span>
-                    </div>
-                    
-                    <div className="flex flex-col justify-between flex-grow">
-                      <div>
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full inline-block ${getStatusBadgeClass(dayData.status)}`}>
-                          {dayData.status.charAt(0).toUpperCase() + dayData.status.slice(1)}
+                {daysInMonth.map(day => {
+                  const dateString = format(day, 'yyyy-MM-dd');
+                  const dayData = availabilityData.find(d => d.date === dateString) || {
+                    date: dateString,
+                    status: 'available'
+                  };
+                  
+                  return (
+                    <div 
+                      key={dateString} 
+                      className={getDayClass(dayData)}
+                      onClick={() => handleDayClick(dayData)}
+                    >
+                      <div className="text-right mb-1">
+                        <span className="text-sm font-medium">
+                          {format(day, 'd')}
                         </span>
                       </div>
                       
-                      {dayData.bookingId && (
-                        <div className="text-xs mt-1 text-muted-foreground">
-                          Booking #{dayData.bookingId.split('-')[1]}
+                      <div className="flex flex-col justify-between flex-grow">
+                        <div>
+                          <span className={`text-xs px-1.5 py-0.5 rounded-full inline-block ${getStatusBadgeClass(dayData.status)}`}>
+                            {dayData.status.charAt(0).toUpperCase() + dayData.status.slice(1)}
+                          </span>
                         </div>
-                      )}
-                      
-                      <div className="mt-auto text-xs font-medium">
-                        ${dayData.price}
+                        
+                        {dayData.bookingId && (
+                          <div className="text-xs mt-1 text-muted-foreground">
+                            Booking #{typeof dayData.bookingId === 'string' && dayData.bookingId.includes('-') 
+                              ? dayData.bookingId.split('-')[1] 
+                              : dayData.bookingId?.substring(0, 8)}
+                          </div>
+                        )}
+                        
+                        <div className="mt-auto text-xs font-medium">
+                          ${dayData.price}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-              
-              {/* Handle empty cells for days of the week after the end of the month */}
-              {Array.from({ length: 6 - monthEnd.getDay() }).map((_, index) => (
-                <div key={`empty-end-${index}`} className="border-t bg-muted/20" />
-              ))}
+                  );
+                })}
+                
+                {/* Handle empty cells for days of the week after the end of the month */}
+                {Array.from({ length: 6 - monthEnd.getDay() }).map((_, index) => (
+                  <div key={`empty-end-${index}`} className="border-t bg-muted/20" />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           
           <div className="flex flex-wrap gap-2 items-center mt-4 text-sm">
             <div className="flex items-center">
@@ -400,7 +702,9 @@ const CalendarPage: React.FC = () => {
                     {selectedDay.status.charAt(0).toUpperCase() + selectedDay.status.slice(1)}
                     {selectedDay.bookingId && (
                       <span className="ml-2 text-sm text-muted-foreground">
-                        (Booking {selectedDay.bookingId.split('-')[1]})
+                        (Booking {typeof selectedDay.bookingId === 'string' && selectedDay.bookingId.includes('-')
+                          ? selectedDay.bookingId.split('-')[1]
+                          : selectedDay.bookingId?.substring(0, 8)})
                       </span>
                     )}
                   </div>
@@ -453,7 +757,7 @@ const CalendarPage: React.FC = () => {
                 <div className="space-y-2">
                   <Label>Base Price</Label>
                   <div className="px-3 py-2 rounded-md bg-muted text-foreground">
-                    ${mockProperties.find(p => p.id === selectedPropertyId)?.basePrice}/night
+                    ${properties.find(p => p.id === selectedPropertyId)?.basePrice}/night
                   </div>
                 </div>
                 

@@ -93,11 +93,22 @@ export interface BookingWidgetProps {
   title?: string;
   subtitle?: string;
   properties?: Property[];
+  services?: BookingService[];
   primaryColor?: string;
   secondaryColor?: string;
   borderRadius?: string;
   fontFamily?: string;
   allowSpecialRequests?: boolean;
+  allowNotes?: boolean;
   apiEndpoint?: string;
   onBookingComplete?: (confirmation: BookingConfirmation) => void;
+}
+
+// Add TimeSlot type to fix the errors
+export interface TimeSlot {
+  id: string;
+  startTime: string;
+  endTime: string;
+  available: boolean;
+  price?: number;
 }

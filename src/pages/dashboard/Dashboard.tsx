@@ -1,79 +1,148 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, Home, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { DollarSign, Users, Home, Calendar, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardMetrics, ActivityItem, RevenueChartData, OccupancyChartData } from '@/types/dashboard';
 import RecentActivityList from '@/components/dashboard/RecentActivityList';
-
-// Mock data
-const mockMetrics: DashboardMetrics = {
-  totalBookings: 124,
-  occupancyRate: 68,
-  totalRevenue: 28450,
-  pendingBookings: 7
-};
-
-const mockRevenueData: RevenueChartData = {
-  daily: Array.from({ length: 30 }, (_, i) => ({
-    date: `${i + 1}`,
-    value: Math.floor(Math.random() * 1500) + 500
-  })),
-  monthly: Array.from({ length: 12 }, (_, i) => ({
-    date: new Date(0, i).toLocaleString('default', { month: 'short' }),
-    value: Math.floor(Math.random() * 15000) + 5000
-  }))
-};
-
-const mockOccupancyData: OccupancyChartData = {
-  monthly: Array.from({ length: 12 }, (_, i) => ({
-    date: new Date(0, i).toLocaleString('default', { month: 'short' }),
-    value: Math.floor(Math.random() * 100)
-  }))
-};
-
-const mockActivities: ActivityItem[] = [
-  {
-    id: '1',
-    type: 'booking_created',
-    message: 'New booking for Beach House from John Smith',
-    timestamp: '2023-10-01T14:32:00Z',
-    propertyId: 'prop1',
-    bookingId: 'book1'
-  },
-  {
-    id: '2',
-    type: 'booking_canceled',
-    message: 'Booking #1234 for Mountain Cabin was canceled',
-    timestamp: '2023-09-30T09:15:00Z',
-    propertyId: 'prop2',
-    bookingId: 'book2'
-  },
-  {
-    id: '3',
-    type: 'property_updated',
-    message: 'Updated images for Lakeside Cottage',
-    timestamp: '2023-09-29T16:45:00Z',
-    propertyId: 'prop3'
-  },
-  {
-    id: '4',
-    type: 'payout_processed',
-    message: 'Payout of $1,245 processed',
-    timestamp: '2023-09-28T11:20:00Z'
-  },
-  {
-    id: '5',
-    type: 'booking_created',
-    message: 'New booking for City Apartment from Lisa Johnson',
-    timestamp: '2023-09-27T18:05:00Z',
-    propertyId: 'prop4',
-    bookingId: 'book3'
-  }
-];
+import { supabase } from '@/integrations/supabase/client';
+import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval, parseISO } from 'date-fns';
+import { toast } from 'sonner';
 
 const Dashboard: React.FC = () => {
+  // State for data
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
+    totalBookings: 0,
+    occupancyRate: 0,
+    totalRevenue: 0,
+    pendingBookings: 0
+  });
+  const [revenueData, setRevenueData] = useState<RevenueChartData>({
+    daily: [],
+    monthly: []
+  });
+  const [occupancyData, setOccupancyData] = useState<OccupancyChartData>({
+    monthly: []
+  });
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch all bookings
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('booking')
+        .select('id, checkIn, checkOut, status, totalPrice, created_at, propertyId');
+
+      if (bookingsError) throw bookingsError;
+
+      // Fetch all properties
+      const { data: properties, error: propertiesError } = await supabase
+        .from('property')
+        .select('id, name');
+
+      if (propertiesError) throw propertiesError;
+
+      // Calculate metrics
+      const totalBookings = bookings ? bookings.length : 0;
+      const pendingBookings = bookings ? bookings.filter(b => b.status === 'PENDING').length : 0;
+      const totalRevenue = bookings ? bookings.reduce((sum, booking) => sum + (booking.totalPrice || 0), 0) : 0;
+
+      // Calculate occupancy rate
+      const today = new Date();
+      const thirtyDaysAgo = subDays(today, 30);
+      const daysInRange = eachDayOfInterval({ start: thirtyDaysAgo, end: today });
+      const occupiedDays = bookings ? bookings.filter(booking => {
+        const checkIn = parseISO(booking.checkIn);
+        const checkOut = parseISO(booking.checkOut);
+        return isWithinInterval(today, { start: checkIn, end: checkOut });
+      }).length : 0;
+      const occupancyRate = Math.round((occupiedDays / (daysInRange.length * properties.length)) * 100);
+
+      setMetrics({
+        totalBookings,
+        occupancyRate,
+        totalRevenue,
+        pendingBookings
+      });
+
+      // Calculate revenue data
+      const dailyRevenue = bookings ? bookings.reduce((acc, booking) => {
+        const date = format(parseISO(booking.created_at), 'dd');
+        acc[date] = (acc[date] || 0) + (booking.totalPrice || 0);
+        return acc;
+      }, {} as Record<string, number>) : {};
+
+      const monthlyRevenue = bookings ? bookings.reduce((acc, booking) => {
+        const month = format(parseISO(booking.created_at), 'MMM');
+        acc[month] = (acc[month] || 0) + (booking.totalPrice || 0);
+        return acc;
+      }, {} as Record<string, number>) : {};
+
+      setRevenueData({
+        daily: Object.entries(dailyRevenue).map(([date, value]) => ({ date, value })),
+        monthly: Object.entries(monthlyRevenue).map(([date, value]) => ({ date, value }))
+      });
+
+      // Calculate occupancy data
+      const monthlyOccupancy = properties.map(property => {
+        const propertyBookings = bookings.filter(b => b.propertyId === property.id);
+        const monthStart = startOfMonth(today);
+        const monthEnd = endOfMonth(today);
+        const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+        const occupiedDays = propertyBookings.filter(booking => {
+          const checkIn = parseISO(booking.checkIn);
+          const checkOut = parseISO(booking.checkOut);
+          return isWithinInterval(today, { start: checkIn, end: checkOut });
+        }).length;
+        return {
+          date: format(monthStart, 'MMM'),
+          value: Math.round((occupiedDays / daysInMonth.length) * 100)
+        };
+      });
+
+      setOccupancyData({
+        monthly: monthlyOccupancy
+      });
+
+      // Create activity items from recent bookings and property updates
+      const recentBookings = bookings
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5)
+        .map(booking => {
+          const property = properties.find(p => p.id === booking.propertyId);
+          return {
+            id: booking.id,
+            type: booking.status === 'CANCELED' ? 'booking_canceled' : 'booking_created',
+            message: `${booking.status === 'CANCELED' ? 'Canceled booking' : 'New booking'} for ${property?.name || 'Unknown Property'}`,
+            timestamp: booking.created_at,
+            propertyId: booking.propertyId,
+            bookingId: booking.id
+          };
+        });
+
+      setActivities(recentBookings);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
@@ -88,7 +157,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Revenue</p>
-                  <h3 className="text-2xl font-bold">${mockMetrics.totalRevenue.toLocaleString()}</h3>
+                  <h3 className="text-2xl font-bold">${metrics.totalRevenue.toLocaleString()}</h3>
                 </div>
               </div>
               <div className="flex items-center text-green-500">
@@ -108,7 +177,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Bookings</p>
-                  <h3 className="text-2xl font-bold">{mockMetrics.totalBookings}</h3>
+                  <h3 className="text-2xl font-bold">{metrics.totalBookings}</h3>
                 </div>
               </div>
               <div className="flex items-center text-green-500">
@@ -128,7 +197,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Occupancy</p>
-                  <h3 className="text-2xl font-bold">{mockMetrics.occupancyRate}%</h3>
+                  <h3 className="text-2xl font-bold">{metrics.occupancyRate}%</h3>
                 </div>
               </div>
               <div className="flex items-center text-red-500">
@@ -148,7 +217,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                  <h3 className="text-2xl font-bold">{mockMetrics.pendingBookings}</h3>
+                  <h3 className="text-2xl font-bold">{metrics.pendingBookings}</h3>
                 </div>
               </div>
               <div className="flex items-center text-green-500">
@@ -175,7 +244,7 @@ const Dashboard: React.FC = () => {
               <TabsContent value="daily" className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                    data={mockRevenueData.daily}
+                    data={revenueData.daily}
                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -189,7 +258,7 @@ const Dashboard: React.FC = () => {
               <TabsContent value="monthly" className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                    data={mockRevenueData.monthly}
+                    data={revenueData.monthly}
                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -212,7 +281,7 @@ const Dashboard: React.FC = () => {
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={mockOccupancyData.monthly}
+                data={occupancyData.monthly}
                 margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
@@ -232,7 +301,7 @@ const Dashboard: React.FC = () => {
           <CardDescription>Latest actions and updates</CardDescription>
         </CardHeader>
         <CardContent>
-          <RecentActivityList activities={mockActivities} />
+          <RecentActivityList activities={activities} />
         </CardContent>
       </Card>
     </div>

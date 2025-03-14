@@ -58,6 +58,7 @@ export interface BookingFormData {
   serviceId?: string;
   date?: string;
   startTime?: string;
+  timeSlotId?: string; // Added this field
   checkInDate?: string;
   checkOutDate?: string;
   guestCount?: number;

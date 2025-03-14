@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,7 +119,7 @@ const Dashboard: React.FC = () => {
           const property = properties.find(p => p.id === booking.propertyId);
           return {
             id: booking.id,
-            type: booking.status === 'CANCELED' ? 'booking_canceled' : 'booking_created',
+            type: booking.status === 'CANCELED' ? 'booking_canceled' as const : 'booking_created' as const,
             message: `${booking.status === 'CANCELED' ? 'Canceled booking' : 'New booking'} for ${property?.name || 'Unknown Property'}`,
             timestamp: booking.created_at,
             propertyId: booking.propertyId,

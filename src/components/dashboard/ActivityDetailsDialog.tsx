@@ -18,6 +18,8 @@ import {
   DollarSign,
   Clock
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface ActivityDetailsDialogProps {
   activity: ActivityItem | null;
@@ -30,6 +32,8 @@ const ActivityDetailsDialog: React.FC<ActivityDetailsDialogProps> = ({
   open, 
   onOpenChange 
 }) => {
+  const navigate = useNavigate();
+  
   if (!activity) return null;
   
   const getActivityIcon = (type: ActivityItem['type']) => {
@@ -59,6 +63,22 @@ const ActivityDetailsDialog: React.FC<ActivityDetailsDialogProps> = ({
         return 'Payout Processed';
       default:
         return 'Activity';
+    }
+  };
+
+  const handleViewBooking = () => {
+    if (activity.bookingId) {
+      onOpenChange(false);
+      toast.success("Navigating to booking details");
+      navigate(`/dashboard/bookings?id=${activity.bookingId}`);
+    }
+  };
+
+  const handleViewProperty = () => {
+    if (activity.propertyId) {
+      onOpenChange(false);
+      toast.success("Navigating to property details");
+      navigate(`/dashboard/properties?id=${activity.propertyId}`);
     }
   };
 
@@ -107,10 +127,10 @@ const ActivityDetailsDialog: React.FC<ActivityDetailsDialogProps> = ({
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
           {activity.bookingId && (
-            <Button>View Booking</Button>
+            <Button onClick={handleViewBooking}>View Booking</Button>
           )}
           {activity.propertyId && !activity.bookingId && (
-            <Button>View Property</Button>
+            <Button onClick={handleViewProperty}>View Property</Button>
           )}
         </DialogFooter>
       </DialogContent>

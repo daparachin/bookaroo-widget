@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Property } from '@/types/booking';
 import { PropertyFormData } from '@/types/dashboard';
@@ -44,7 +43,6 @@ const PropertiesPage: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Fetch properties from Supabase
   useEffect(() => {
     const fetchProperties = async () => {
       setIsLoading(true);
@@ -58,15 +56,14 @@ const PropertiesPage: React.FC = () => {
         }
         
         if (data) {
-          // Transform data to match the Property type
           const formattedProperties: Property[] = data.map(item => ({
             id: item.id,
             name: item.name,
-            description: item.location, // Using location as description for now
-            type: 'house', // Default value since it's not in the database yet
-            maxGuests: 4, // Default value
-            bedrooms: 2, // Default value
-            bathrooms: 1, // Default value
+            description: item.location,
+            type: 'house',
+            maxGuests: 4,
+            bedrooms: 2,
+            bathrooms: 1,
             amenities: [],
             basePrice: item.pricePerNight,
             seasonalPricing: item.seasonalPricing || {},
@@ -132,7 +129,6 @@ const PropertiesPage: React.FC = () => {
 
   const handleSubmit = async (formData: PropertyFormData) => {
     try {
-      // Get the user's ID
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -140,14 +136,12 @@ const PropertiesPage: React.FC = () => {
         return;
       }
       
-      // Check if the user exists in the user table
       const { data: existingUser, error: userCheckError } = await supabase
         .from('user')
         .select('id')
         .eq('id', user.id)
         .maybeSingle();
       
-      // If user doesn't exist in user table, create them
       if (!existingUser && !userCheckError) {
         const { error: createUserError } = await supabase
           .from('user')
@@ -170,12 +164,11 @@ const PropertiesPage: React.FC = () => {
       }
       
       if (formData.id) {
-        // Update existing property
         const { error } = await supabase
           .from('property')
           .update({
             name: formData.name,
-            location: formData.description, // Using description as location for now
+            location: formData.description,
             pricePerNight: formData.basePrice,
             seasonalPricing: formData.seasonalPricing || {},
             extendedStayDiscounts: formData.extendedStayDiscounts || []
@@ -186,19 +179,17 @@ const PropertiesPage: React.FC = () => {
           throw error;
         }
         
-        // Update local state
         setProperties(properties.map(p => 
           p.id === formData.id ? { ...p, ...formData as Property } : p
         ));
         
         toast.success('Property updated successfully');
       } else {
-        // Create new property
         const { data, error } = await supabase
           .from('property')
           .insert({
             name: formData.name,
-            location: formData.description, // Using description as location for now
+            location: formData.description,
             pricePerNight: formData.basePrice,
             ownerId: user.id,
             seasonalPricing: formData.seasonalPricing || {},
@@ -211,12 +202,11 @@ const PropertiesPage: React.FC = () => {
         }
         
         if (data && data[0]) {
-          // Create a new Property object with the returned data
           const newProperty: Property = {
             id: data[0].id,
             name: data[0].name,
             description: data[0].location,
-            type: 'house', // Default value
+            type: 'house',
             maxGuests: formData.maxGuests,
             bedrooms: formData.bedrooms,
             bathrooms: formData.bathrooms,

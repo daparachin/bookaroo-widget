@@ -58,7 +58,7 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
         .from('property_availability')
         .select('*')
         .eq('property_id', propertyId)
-        .or('status.eq.booked,status.eq.blocked')
+        .or('status.eq.booked,status.eq.blocked,status.eq.pending')
         .gte('date', format(today, 'yyyy-MM-dd'))
         .lte('date', format(endDate, 'yyyy-MM-dd'));
       

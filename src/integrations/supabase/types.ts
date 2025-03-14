@@ -44,30 +44,48 @@ export type Database = {
       }
       booking: {
         Row: {
+          basePrice: number | null
           checkIn: string
           checkOut: string
+          cleaningFee: number | null
           created_at: string
+          discount: number | null
           id: string
           propertyId: string
+          seasonalAdjustment: number | null
+          serviceFee: number | null
           status: Database["public"]["Enums"]["BookingStatus"]
+          totalPrice: number | null
           userId: string
         }
         Insert: {
+          basePrice?: number | null
           checkIn: string
           checkOut: string
+          cleaningFee?: number | null
           created_at?: string
+          discount?: number | null
           id?: string
           propertyId: string
+          seasonalAdjustment?: number | null
+          serviceFee?: number | null
           status?: Database["public"]["Enums"]["BookingStatus"]
+          totalPrice?: number | null
           userId: string
         }
         Update: {
+          basePrice?: number | null
           checkIn?: string
           checkOut?: string
+          cleaningFee?: number | null
           created_at?: string
+          discount?: number | null
           id?: string
           propertyId?: string
+          seasonalAdjustment?: number | null
+          serviceFee?: number | null
           status?: Database["public"]["Enums"]["BookingStatus"]
+          totalPrice?: number | null
           userId?: string
         }
         Relationships: [

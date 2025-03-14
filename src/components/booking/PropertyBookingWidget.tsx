@@ -207,6 +207,12 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
       customerEmail: formData.get('customerEmail') as string,
       customerPhone: formData.get('customerPhone') as string,
       specialRequests: formData.get('specialRequests') as string,
+      basePrice: pricingDetails?.basePrice,
+      cleaningFee: pricingDetails?.cleaningFee,
+      serviceFee: pricingDetails?.serviceFee,
+      discount: pricingDetails?.discount,
+      seasonalAdjustment: pricingDetails?.seasonalAdjustment,
+      totalPrice: pricingDetails?.total
     };
     
     if (!bookingData.customerName || !bookingData.customerEmail || !bookingData.customerPhone) {

@@ -1,40 +1,37 @@
 
-export interface TimeSlot {
-  id: string;
-  startTime: string;
-  endTime: string;
-  available: boolean;
-  price: number;
+// If this file doesn't exist yet, we'll create it with the necessary types
+
+export interface DateRange {
+  checkIn?: Date;
+  checkOut?: Date;
 }
 
-export interface DayAvailability {
-  date: string;
-  hasAvailability: boolean;
-  slots?: TimeSlot[];
+export interface PricingDetails {
+  basePrice: number;
+  nightsCount: number;
+  cleaningFee: number;
+  serviceFee: number;
+  discount: number;
+  seasonalAdjustment: number;
+  total: number;
 }
 
-// Updated service to represent a property/room
 export interface Property {
   id: string;
   name: string;
-  description: string;
-  type: 'room' | 'apartment' | 'house' | 'villa';
+  description?: string;
+  location: string;
+  type?: string;
+  image?: string;
+  basePrice: number;
   maxGuests: number;
   bedrooms: number;
   bathrooms: number;
   amenities: string[];
-  basePrice: number;
-  image?: string;
-  seasonalPricing?: {
-    [key: string]: number; // Format: "MM-DD": priceMultiplier
-  };
-  extendedStayDiscounts?: {
-    days: number;
-    discountPercentage: number;
-  }[];
+  seasonalPricing?: { [key: string]: number }; // MM-DD format as key, price multiplier as value
+  extendedStayDiscounts?: { days: number; discountPercentage: number }[];
 }
 
-// Backwards compatibility for legacy components
 export interface BookingService {
   id: string;
   name: string;
@@ -44,67 +41,63 @@ export interface BookingService {
   image?: string;
 }
 
-// Represents a date range for a booking
-export interface DateRange {
-  checkIn: Date | undefined;
-  checkOut: Date | undefined;
+export interface DayAvailability {
+  date: string;
+  hasAvailability: boolean;
+  slots?: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    available: boolean;
+    price?: number;
+  }[];
 }
 
-// Pricing details with breakdown
-export interface PricingDetails {
-  basePrice: number;
-  nightsCount: number;
-  seasonalAdjustment: number;
-  discount: number;
-  cleaningFee: number;
-  serviceFee: number;
-  total: number;
-}
-
-// Updated form data for property bookings
 export interface BookingFormData {
-  propertyId: string;
-  checkInDate: string; // YYYY-MM-DD format
-  checkOutDate: string; // YYYY-MM-DD format
-  guestCount: number;
-  customerName: string; // Required field
-  customerEmail: string; // Required field
-  customerPhone: string; // Required field
-  specialRequests?: string;
-  // Legacy fields for compatibility
+  propertyId?: string;
   serviceId?: string;
   date?: string;
-  timeSlotId?: string;
-  notes?: string;
+  startTime?: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  guestCount?: number;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  specialRequests?: string;
+  // Pricing details
+  basePrice?: number;
+  cleaningFee?: number;
+  serviceFee?: number;
+  discount?: number;
+  seasonalAdjustment?: number;
+  totalPrice?: number;
+}
+
+export interface BookingConfirmation {
+  bookingId: string;
+  customerName: string;
+  propertyName?: string;
+  serviceName?: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  guestCount?: number;
+  price?: number;
+  totalPrice: number;
 }
 
 export interface BookingWidgetProps {
   title?: string;
   subtitle?: string;
   properties?: Property[];
-  services?: BookingService[]; // For backwards compatibility
   primaryColor?: string;
   secondaryColor?: string;
   borderRadius?: string;
   fontFamily?: string;
   allowSpecialRequests?: boolean;
-  allowNotes?: boolean; // For backwards compatibility
   apiEndpoint?: string;
-  onBookingComplete?: (bookingData: any) => void;
-}
-
-export interface BookingConfirmation {
-  bookingId: string;
-  customerName: string;
-  propertyName: string;
-  checkInDate: string;
-  checkOutDate: string;
-  guestCount: number;
-  totalPrice: number;
-  // Legacy fields for compatibility
-  serviceName?: string;
-  date?: string;
-  startTime?: string;
-  endTime?: string;
-  price?: number;
+  onBookingComplete?: (confirmation: BookingConfirmation) => void;
 }

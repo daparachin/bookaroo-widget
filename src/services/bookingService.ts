@@ -94,10 +94,12 @@ export const bookingService = {
     return new Promise((resolve) => {
       setTimeout(() => {
         const mockService = MOCK_SERVICES.find(s => s.id === bookingData.serviceId);
-        const basePrice = mockService?.price || 0;
-        const serviceFee = basePrice * 0.1;
-        const cleaningFee = 75;
-        const totalPrice = basePrice + serviceFee + cleaningFee;
+        const basePrice = bookingData.basePrice || mockService?.price || 0;
+        const serviceFee = bookingData.serviceFee || (basePrice * 0.1);
+        const cleaningFee = bookingData.cleaningFee || 75;
+        const discount = bookingData.discount || 0;
+        const seasonalAdjustment = bookingData.seasonalAdjustment || 0;
+        const totalPrice = (basePrice + serviceFee + cleaningFee + seasonalAdjustment) - discount;
         
         const confirmation: BookingConfirmation = {
           bookingId: `booking-${Date.now()}`,

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,6 +54,7 @@ const WidgetPage: React.FC = () => {
             id: prop.id,
             name: prop.name,
             description: prop.location,
+            location: prop.location,
             type: 'house' as 'house' | 'room' | 'apartment' | 'villa',
             maxGuests: 4,
             bedrooms: 2,
@@ -114,7 +114,6 @@ const WidgetPage: React.FC = () => {
     }
   };
   
-  // Generate the embed code based on current configuration
   const generateEmbedCode = () => {
     const host = window.location.origin;
     
@@ -150,19 +149,18 @@ const WidgetPage: React.FC = () => {
 <!-- End Vacation Rental Booking Widget -->`;
   };
   
-  // Get just the selected properties for the widget preview
   const getSelectedProperties = () => {
     return properties.filter(property => 
       widgetConfig.propertyIds.includes(property.id)
     );
   };
   
-  // Mock properties for fallback
   const mockProperties: Property[] = [
     {
       id: '1',
       name: 'Luxury Beach House',
       description: 'Beautiful beachfront property with stunning ocean views',
+      location: 'Malibu, CA',
       type: 'house',
       maxGuests: 8,
       bedrooms: 4,
@@ -174,6 +172,7 @@ const WidgetPage: React.FC = () => {
       id: '2',
       name: 'Downtown Apartment',
       description: 'Modern apartment in the heart of the city',
+      location: 'New York, NY',
       type: 'apartment',
       maxGuests: 4,
       bedrooms: 2,
@@ -185,6 +184,7 @@ const WidgetPage: React.FC = () => {
       id: '3',
       name: 'Mountain Cabin',
       description: 'Cozy cabin with amazing mountain views',
+      location: 'Aspen, CO',
       type: 'house',
       maxGuests: 6,
       bedrooms: 3,

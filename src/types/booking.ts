@@ -1,4 +1,3 @@
-
 // If this file doesn't exist yet, we'll create it with the necessary types
 
 export interface DateRange {
@@ -58,7 +57,7 @@ export interface BookingFormData {
   serviceId?: string;
   date?: string;
   startTime?: string;
-  timeSlotId?: string; // Added this field
+  timeSlotId?: string;
   checkInDate?: string;
   checkOutDate?: string;
   guestCount?: number;
@@ -103,9 +102,13 @@ export interface BookingWidgetProps {
   allowNotes?: boolean;
   apiEndpoint?: string;
   onBookingComplete?: (confirmation: BookingConfirmation) => void;
+  
+  selectedService?: BookingService | null;
+  selectedDate?: Date;
+  selectedTimeSlot?: TimeSlot | null;
+  isSubmitting?: boolean;
 }
 
-// Add TimeSlot type to fix the errors
 export interface TimeSlot {
   id: string;
   startTime: string;

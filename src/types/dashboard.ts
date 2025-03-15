@@ -1,4 +1,3 @@
-
 import { Property, BookingConfirmation, PricingDetails } from './booking';
 
 // Dashboard metrics
@@ -37,6 +36,7 @@ export interface ActivityItem {
 // Property creation and editing
 export interface PropertyFormData extends Omit<Property, 'id'> {
   id?: string;
+  // Make sure location is also included (inherited from Property)
 }
 
 // Calendar availability type

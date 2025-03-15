@@ -18,12 +18,18 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
   borderRadius = '1rem',
   allowNotes = true,
   apiEndpoint,
-  onBookingComplete
+  onBookingComplete,
+  // The component accepts these props but doesn't use them directly
+  // as it maintains its own state
+  selectedService: initialSelectedService,
+  selectedDate: initialSelectedDate,
+  selectedTimeSlot: initialSelectedTimeSlot,
+  isSubmitting: initialIsSubmitting
 }) => {
-  const [selectedService, setSelectedService] = useState<BookingService | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedService, setSelectedService] = useState<BookingService | null>(initialSelectedService || null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialSelectedDate);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(initialSelectedTimeSlot || null);
+  const [isSubmitting, setIsSubmitting] = useState(initialIsSubmitting || false);
   const [bookingConfirmation, setBookingConfirmation] = useState<BookingConfirmationType | null>(null);
 
   const resetBooking = () => {

@@ -60,6 +60,7 @@ const PropertiesPage: React.FC = () => {
             id: item.id,
             name: item.name,
             description: item.location,
+            location: item.location,
             type: 'house',
             maxGuests: 4,
             bedrooms: 2,
@@ -93,6 +94,7 @@ const PropertiesPage: React.FC = () => {
     setEditingProperty({
       name: '',
       description: '',
+      location: '',
       type: 'house',
       maxGuests: 4,
       bedrooms: 2,
@@ -168,7 +170,7 @@ const PropertiesPage: React.FC = () => {
           .from('property')
           .update({
             name: formData.name,
-            location: formData.description,
+            location: formData.location || formData.description,
             pricePerNight: formData.basePrice,
             seasonalPricing: formData.seasonalPricing || {},
             extendedStayDiscounts: formData.extendedStayDiscounts || []
@@ -179,9 +181,24 @@ const PropertiesPage: React.FC = () => {
           throw error;
         }
         
-        setProperties(properties.map(p => 
-          p.id === formData.id ? { ...p, ...formData as Property } : p
-        ));
+        setProperties(properties.map(p => {
+          if (p.id === formData.id) {
+            return {
+              ...p,
+              name: formData.name,
+              description: formData.description,
+              location: formData.location || formData.description,
+              basePrice: formData.basePrice,
+              maxGuests: formData.maxGuests,
+              bedrooms: formData.bedrooms,
+              bathrooms: formData.bathrooms,
+              amenities: formData.amenities,
+              seasonalPricing: formData.seasonalPricing,
+              extendedStayDiscounts: formData.extendedStayDiscounts
+            };
+          }
+          return p;
+        }));
         
         toast.success('Property updated successfully');
       } else {
@@ -189,7 +206,7 @@ const PropertiesPage: React.FC = () => {
           .from('property')
           .insert({
             name: formData.name,
-            location: formData.description,
+            location: formData.location || formData.description,
             pricePerNight: formData.basePrice,
             ownerId: user.id,
             seasonalPricing: formData.seasonalPricing || {},
@@ -206,6 +223,7 @@ const PropertiesPage: React.FC = () => {
             id: data[0].id,
             name: data[0].name,
             description: data[0].location,
+            location: data[0].location,
             type: 'house',
             maxGuests: formData.maxGuests,
             bedrooms: formData.bedrooms,

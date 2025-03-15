@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,8 @@ const PricingPage: React.FC = () => {
           const formattedProperties: Property[] = data.map(property => ({
             id: property.id,
             name: property.name,
-            description: property.location, // Using location as description for now
+            description: property.location,
+            location: property.location,
             type: 'house', // Default type
             maxGuests: 4, // Default value
             bedrooms: 2, // Default value

@@ -5,7 +5,7 @@ import { BookingService, BookingConfirmation, Property } from '@/types/booking';
 import { Button } from '@/components/ui/button';
 import PropertyBookingWidget from '@/components/booking/PropertyBookingWidget';
 import BookingWidget from '@/components/booking/BookingWidget';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { ArrowLeft, Home } from 'lucide-react';
 
 // Mock data for demonstration
@@ -76,7 +76,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   primaryColor = '#0f766e',
   logo
 }) => {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [bookingComplete, setBookingComplete] = useState(false);
   
   const handleBookingComplete = (confirmation: BookingConfirmation) => {

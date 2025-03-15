@@ -1,3 +1,4 @@
+
 // If this file doesn't exist yet, we'll create it with the necessary types
 
 export interface DateRange {
@@ -107,6 +108,7 @@ export interface BookingWidgetProps {
   selectedDate?: Date;
   selectedTimeSlot?: TimeSlot | null;
   isSubmitting?: boolean;
+  onSubmit?: (formData: BookingFormData) => Promise<void>;
 }
 
 export interface TimeSlot {

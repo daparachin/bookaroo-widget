@@ -12,6 +12,7 @@ import CalendarPage from "./pages/dashboard/CalendarPage";
 import BookingsPage from "./pages/dashboard/BookingsPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import WidgetPage from "./pages/dashboard/WidgetPage";
+import BookingPage from "./pages/BookingPage";
 import NotFound from "./pages/NotFound";
 import { SidebarProvider } from "./components/ui/sidebar";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
@@ -36,6 +37,8 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
+    <Route path="/booking" element={<BookingPage />} />
+    <Route path="/booking/property" element={<BookingPage mode="property" />} />
     <Route
       path="/dashboard"
       element={

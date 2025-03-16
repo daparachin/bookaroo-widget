@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BookingWidgetProps, BookingService, TimeSlot, BookingFormData, BookingConfirmation as BookingConfirmationType } from '@/types/booking';
 import { bookingService } from '@/services/bookingService';
@@ -61,17 +60,17 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
       className={cn(
         "bg-background border shadow-elegant",
         "transition-all duration-300 overflow-hidden",
-        "max-w-lg w-full mx-auto my-4"
+        "w-full mx-auto my-4"
       )}
       style={{ 
         borderRadius,
         ...(primaryColor ? { '--primary': primaryColor } as React.CSSProperties : {})
       }}
     >
-      <div className="p-6">
-        <div className="text-center mb-6 animate-fade-in">
-          <h2 className="text-xl font-bold mb-1">{title}</h2>
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+      <div className="p-4 sm:p-6">
+        <div className="text-center mb-4 sm:mb-6 animate-fade-in">
+          <h2 className="text-lg sm:text-xl font-bold mb-1">{title}</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">{subtitle}</p>
         </div>
 
         {bookingConfirmation ? (
@@ -80,13 +79,13 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
             onReset={resetBooking} 
           />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <ServiceSelector 
               onSelectService={setSelectedService} 
               selectedService={selectedService} 
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
               <CalendarView 
                 onSelectDate={setSelectedDate} 
                 selectedDate={selectedDate} 

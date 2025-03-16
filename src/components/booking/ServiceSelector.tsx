@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BookingService } from '@/types/booking';
 import { bookingService } from '@/services/bookingService';
@@ -38,11 +37,11 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-muted-foreground">Select a service</h3>
+      <div className="space-y-2 sm:space-y-3">
+        <h3 className="text-xs sm:text-sm font-medium text-muted-foreground">Select a service</h3>
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 rounded-lg animate-pulse-subtle" />
+            <Skeleton key={index} className="h-16 sm:h-20 rounded-lg animate-pulse-subtle" />
           ))}
         </div>
       </div>
@@ -50,24 +49,24 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   }
 
   return (
-    <div className="animate-fade-in">
-      <h3 className="text-sm font-medium mb-3 text-muted-foreground">Select a service</h3>
+    <div className="animate-fade-in service-selector">
+      <h3 className="text-xs sm:text-sm font-medium mb-2 sm:mb-3 text-muted-foreground">Select a service</h3>
       <div className="space-y-2">
         {services.map((service) => (
           <div
             key={service.id}
             onClick={() => onSelectService(service)}
             className={cn(
-              "p-4 rounded-lg border cursor-pointer group",
+              "p-3 sm:p-4 rounded-lg border cursor-pointer group service-card",
               "hover:shadow-elegant hover:border-primary/40 transition-all duration-300",
               selectedService?.id === service.id
                 ? "bg-primary/5 border-primary/40 shadow-elegant"
                 : "bg-card"
             )}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               {service.image && (
-                <div className="rounded-md overflow-hidden w-16 h-16 flex-shrink-0 transition-transform group-hover:scale-105">
+                <div className="rounded-md overflow-hidden w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 transition-transform group-hover:scale-105">
                   <img 
                     src={service.image} 
                     alt={service.name} 
@@ -78,14 +77,14 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
               )}
               
               <div className="flex-1">
-                <h4 className="font-medium mb-1 group-hover:text-primary transition-colors">
+                <h4 className="font-medium mb-0.5 sm:mb-1 text-sm sm:text-base group-hover:text-primary transition-colors">
                   {service.name}
                 </h4>
-                <p className="text-sm text-muted-foreground mb-2">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2 line-clamp-2">
                   {service.description}
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">${service.price}</span>
+                  <span className="text-xs sm:text-sm font-medium">${service.price}</span>
                   <span className="text-xs text-muted-foreground">
                     {service.duration} min
                   </span>

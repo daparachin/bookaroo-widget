@@ -51,6 +51,42 @@ header {
   transition: none !important;
 }
 
+/* Booking widget responsive rules */
+@media (max-width: 640px) {
+  /* Make booking calendars more compact on mobile */
+  .rdp {
+    --rdp-cell-size: 36px !important;
+    margin: 0 !important;
+  }
+  
+  /* Adjust property cards for mobile */
+  [class*="property-card"] {
+    flex-direction: column !important;
+  }
+  
+  [class*="property-card"] img {
+    width: 100% !important;
+    height: 160px !important;
+    object-fit: cover !important;
+  }
+
+  /* Make time slots grid more compact */
+  [class*="time-slots-grid"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  
+  [class*="time-slot-button"] {
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* Fix form inputs on mobile */
+  form input, form textarea, form select {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

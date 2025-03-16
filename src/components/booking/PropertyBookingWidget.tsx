@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { BookingWidgetProps, Property, DateRange, PricingDetails, BookingFormData, BookingConfirmation } from '@/types/booking';
@@ -331,10 +330,10 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
         '--calendar-range-text': '#0F172A',
       } as React.CSSProperties}
     >
-      <div className="p-6">
-        <div className="text-center mb-6 animate-fade-in">
-          <h2 className="text-xl font-bold mb-1">{title}</h2>
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+      <div className="p-4 sm:p-6">
+        <div className="text-center mb-4 sm:mb-6 animate-fade-in">
+          <h2 className="text-lg sm:text-xl font-bold mb-1">{title}</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">{subtitle}</p>
         </div>
 
         {bookingConfirmation ? (
@@ -343,14 +342,14 @@ const PropertyBookingWidget: React.FC<BookingWidgetProps> = ({
             resetBooking={resetBooking} 
           />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <PropertySelector 
               properties={properties}
               onSelectProperty={setSelectedProperty} 
               selectedProperty={selectedProperty} 
             />
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
               <PropertyDateRangePicker 
                 dateRange={dateRange}
                 onDateSelect={handleDateSelect}

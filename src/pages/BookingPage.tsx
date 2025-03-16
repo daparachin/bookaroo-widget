@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookingService, BookingConfirmation, Property } from '@/types/booking';
@@ -85,13 +84,13 @@ const BookingPage: React.FC<BookingPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-4 md:py-8 px-3 md:px-6">
       <div className="container mx-auto max-w-5xl">
-        <header className="flex justify-between items-center mb-8">
-          <Link to="/">
-            <Button variant="ghost" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to Homepage</span>
+        <header className="flex flex-col sm:flex-row justify-between items-center mb-4 md:mb-8 gap-3">
+          <Link to="/" className="self-start sm:self-auto">
+            <Button variant="ghost" className="flex items-center gap-1 px-2 h-8 sm:h-10 sm:px-4 sm:gap-2 text-sm sm:text-base">
+              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="sm:block">{isMobile ? 'Back' : 'Back to Homepage'}</span>
             </Button>
           </Link>
           
@@ -100,31 +99,33 @@ const BookingPage: React.FC<BookingPageProps> = ({
               <img 
                 src={logo} 
                 alt="Company Logo" 
-                className="h-12 object-contain" 
+                className="h-8 sm:h-12 object-contain" 
               />
             </div>
           ) : (
             <div className="flex-1 flex justify-center">
-              <h1 className="text-2xl font-bold" style={{ color: primaryColor }}>
+              <h1 className="text-lg sm:text-2xl font-bold text-center" style={{ color: primaryColor }}>
                 Vacation Rental Booking
               </h1>
             </div>
           )}
           
-          <div className="w-[100px]"></div> {/* Spacer for balance */}
+          <div className="hidden sm:block w-[100px]"></div> {/* Spacer for balance on desktop only */}
         </header>
         
-        <main className="mb-12">
+        <main className="mb-8 md:mb-12">
           {mode === 'service' ? (
-            <BookingWidget 
-              title="Book a Service"
-              subtitle="Select a service, date, and time that works for you"
-              services={mockServices}
-              primaryColor={primaryColor}
-              borderRadius="0.75rem"
-              allowNotes={true}
-              onBookingComplete={handleBookingComplete}
-            />
+            <div className="max-w-xl mx-auto">
+              <BookingWidget 
+                title="Book a Service"
+                subtitle="Select a service, date, and time that works for you"
+                services={mockServices}
+                primaryColor={primaryColor}
+                borderRadius="0.75rem"
+                allowNotes={true}
+                onBookingComplete={handleBookingComplete}
+              />
+            </div>
           ) : (
             <PropertyBookingWidget
               title="Book Your Stay"
@@ -138,9 +139,9 @@ const BookingPage: React.FC<BookingPageProps> = ({
           )}
         </main>
         
-        <footer className="text-center text-gray-500 text-sm">
+        <footer className="text-center text-gray-500 text-xs sm:text-sm py-4">
           <p>© {new Date().getFullYear()} Vacation Rental Booking. All rights reserved.</p>
-          <div className="flex justify-center gap-4 mt-2">
+          <div className="flex justify-center gap-2 sm:gap-4 mt-1 sm:mt-2">
             <a href="#" className="hover:text-gray-700">Terms</a>
             <a href="#" className="hover:text-gray-700">Privacy</a>
             <a href="#" className="hover:text-gray-700">Contact</a>

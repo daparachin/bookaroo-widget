@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Property } from '@/types/booking';
+import React, { useState } from 'react';
 import { PropertyFormData } from '@/types/dashboard';
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Edit, Trash, Eye, MoreHorizontal, Loader2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash, MoreHorizontal, Loader2, RefreshCw } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -18,6 +17,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -33,63 +33,36 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import PropertyForm from '@/components/dashboard/PropertyForm';
-import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import useProperties from '@/hooks/useProperties';
+import { PropertyCreateData, PropertyData, PropertyUpdateData } from '@/types/api';
 
 const PropertiesPage: React.FC = () => {
-  const [properties, setProperties] = useState<Property[]>([]);
+  // State management
   const [searchTerm, setSearchTerm] = useState('');
   const [editingProperty, setEditingProperty] = useState<PropertyFormData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   
-  useEffect(() => {
-    const fetchProperties = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('property')
-          .select('*');
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data) {
-          const formattedProperties: Property[] = data.map(item => ({
-            id: item.id,
-            name: item.name,
-            description: item.location,
-            location: item.location,
-            type: 'house',
-            maxGuests: 4,
-            bedrooms: 2,
-            bathrooms: 1,
-            amenities: [],
-            basePrice: item.pricePerNight,
-            seasonalPricing: item.seasonalPricing || {},
-            extendedStayDiscounts: item.extendedStayDiscounts || []
-          }));
-          
-          setProperties(formattedProperties);
-        }
-      } catch (error) {
-        console.error('Error fetching properties:', error);
-        toast.error('Failed to load properties');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchProperties();
-  }, []);
+  // Use our custom hook for properties data management
+  const { 
+    properties,
+    isLoading,
+    error,
+    refetch,
+    createProperty,
+    isCreating,
+    updateProperty,
+    isUpdating,
+    deleteProperty,
+    isDeleting
+  } = useProperties();
   
-  const filteredProperties = properties.filter(property => 
+  // Filter properties based on search term
+  const filteredProperties = properties.filter((property: PropertyData) => 
     property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    property.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    property.type.toLowerCase().includes(searchTerm.toLowerCase())
+    property.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Initialize new property form
   const handleCreate = () => {
     setEditingProperty({
       name: '',
@@ -105,275 +78,203 @@ const PropertiesPage: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (property: Property) => {
-    setEditingProperty(property);
+  // Open edit form for existing property
+  const handleEdit = (property: PropertyData) => {
+    setEditingProperty({
+      id: property.id,
+      name: property.name,
+      description: property.location,
+      location: property.location,
+      type: 'house', // Default type since it's not in the API data
+      maxGuests: property.maxGuests || 4,
+      bedrooms: property.bedrooms || 2,
+      bathrooms: property.bathrooms || 1,
+      amenities: property.amenities || [],
+      basePrice: property.pricePerNight,
+      seasonalPricing: property.seasonalPricing,
+      extendedStayDiscounts: property.extendedStayDiscounts
+    });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (propertyId: string) => {
-    try {
-      const { error } = await supabase
-        .from('property')
-        .delete()
-        .eq('id', propertyId);
-      
-      if (error) {
-        throw error;
-      }
-      
-      setProperties(properties.filter(p => p.id !== propertyId));
-      toast.success('Property deleted successfully');
-    } catch (error) {
-      console.error('Error deleting property:', error);
-      toast.error('Failed to delete property');
-    }
-  };
-
+  // Handle property form submission
   const handleSubmit = async (formData: PropertyFormData) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error('You must be logged in to save a property');
-        return;
-      }
-      
-      const { data: existingUser, error: userCheckError } = await supabase
-        .from('user')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      if (!existingUser && !userCheckError) {
-        const { error: createUserError } = await supabase
-          .from('user')
-          .insert({
-            id: user.id,
-            email: user.email,
-            name: user.user_metadata?.name || user.email,
-            role: 'OWNER'
-          });
-        
-        if (createUserError) {
-          console.error('Error creating user:', createUserError);
-          toast.error('Failed to create user profile');
-          return;
-        }
-      } else if (userCheckError) {
-        console.error('Error checking user:', userCheckError);
-        toast.error('Failed to verify user account');
-        return;
-      }
-      
+      // Create or update property based on whether it has an ID
       if (formData.id) {
-        const { error } = await supabase
-          .from('property')
-          .update({
-            name: formData.name,
-            location: formData.location || formData.description,
-            pricePerNight: formData.basePrice,
-            seasonalPricing: formData.seasonalPricing || {},
-            extendedStayDiscounts: formData.extendedStayDiscounts || []
-          })
-          .eq('id', formData.id);
+        // Prepare update data
+        const updateData: PropertyUpdateData = {
+          name: formData.name,
+          location: formData.location || formData.description,
+          pricePerNight: formData.basePrice,
+          maxGuests: formData.maxGuests,
+          bedrooms: formData.bedrooms,
+          bathrooms: formData.bathrooms,
+          amenities: formData.amenities,
+          seasonalPricing: formData.seasonalPricing,
+          extendedStayDiscounts: formData.extendedStayDiscounts
+        };
         
-        if (error) {
-          throw error;
-        }
-        
-        setProperties(properties.map(p => {
-          if (p.id === formData.id) {
-            return {
-              ...p,
-              name: formData.name,
-              description: formData.description,
-              location: formData.location || formData.description,
-              basePrice: formData.basePrice,
-              maxGuests: formData.maxGuests,
-              bedrooms: formData.bedrooms,
-              bathrooms: formData.bathrooms,
-              amenities: formData.amenities,
-              seasonalPricing: formData.seasonalPricing,
-              extendedStayDiscounts: formData.extendedStayDiscounts
-            };
-          }
-          return p;
-        }));
-        
-        toast.success('Property updated successfully');
+        // Update existing property
+        updateProperty({ id: formData.id, data: updateData });
       } else {
-        const { data, error } = await supabase
-          .from('property')
-          .insert({
-            name: formData.name,
-            location: formData.location || formData.description,
-            pricePerNight: formData.basePrice,
-            ownerId: user.id,
-            seasonalPricing: formData.seasonalPricing || {},
-            extendedStayDiscounts: formData.extendedStayDiscounts || []
-          })
-          .select();
+        // Prepare create data
+        const createData: PropertyCreateData = {
+          name: formData.name,
+          location: formData.location || formData.description,
+          pricePerNight: formData.basePrice,
+          maxGuests: formData.maxGuests,
+          bedrooms: formData.bedrooms,
+          bathrooms: formData.bathrooms,
+          amenities: formData.amenities,
+          seasonalPricing: formData.seasonalPricing,
+          extendedStayDiscounts: formData.extendedStayDiscounts
+        };
         
-        if (error) {
-          throw error;
-        }
-        
-        if (data && data[0]) {
-          const newProperty: Property = {
-            id: data[0].id,
-            name: data[0].name,
-            description: data[0].location,
-            location: data[0].location,
-            type: 'house',
-            maxGuests: formData.maxGuests,
-            bedrooms: formData.bedrooms,
-            bathrooms: formData.bathrooms,
-            amenities: formData.amenities,
-            basePrice: data[0].pricePerNight,
-            seasonalPricing: data[0].seasonalPricing,
-            extendedStayDiscounts: data[0].extendedStayDiscounts
-          };
-          
-          setProperties([...properties, newProperty]);
-          toast.success('Property created successfully');
-        }
+        // Create new property
+        createProperty(createData);
       }
+      
+      // Close dialog after successful submission
+      setIsDialogOpen(false);
+      setEditingProperty(null);
     } catch (error) {
-      console.error('Error saving property:', error);
-      toast.error('Failed to save property');
+      console.error('Error in form submission:', error);
+      // Error is handled by the mutation
     }
-    
-    setIsDialogOpen(false);
-    setEditingProperty(null);
   };
 
+  // Handle property deletion
+  const handleDelete = (propertyId: string) => {
+    deleteProperty(propertyId);
+  };
+
+  // Check if any mutation is in progress
+  const isSubmitting = isCreating || isUpdating || isDeleting;
+
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold tracking-tight">Properties</h2>
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Add Property
+        <h1 className="text-3xl font-bold">Properties</h1>
+        <Button onClick={handleCreate} className="flex items-center gap-2" disabled={isSubmitting}>
+          <Plus className="h-4 w-4" /> Add Property
         </Button>
       </div>
       
-      <div className="flex items-center mb-4">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search properties..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-      
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>All Properties</CardTitle>
-          <CardDescription>Manage your rental properties</CardDescription>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>Manage Your Properties</CardTitle>
+              <CardDescription>
+                View, add, and edit your rental properties.
+              </CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => refetch()} 
+              disabled={isLoading || isSubmitting}
+              title="Refresh properties"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+          <div className="flex items-center mt-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                type="search"
+                placeholder="Search properties..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Loading properties...</span>
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-500 mb-4">Failed to load properties</p>
+              <Button variant="outline" onClick={() => refetch()}>
+                Try Again
+              </Button>
+            </div>
+          ) : filteredProperties.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500">
+                {searchTerm ? 'No properties match your search.' : 'No properties found. Add your first property!'}
+              </p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Property</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Bedrooms</TableHead>
-                  <TableHead>Base Price</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Price</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProperties.map((property) => (
+                {filteredProperties.map((property: PropertyData) => (
                   <TableRow key={property.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        {property.image && (
-                          <div className="h-10 w-10 mr-3 rounded overflow-hidden">
-                            <img 
-                              src={property.image} 
-                              alt={property.name} 
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                        )}
-                        <div>
-                          <div>{property.name}</div>
-                          <div className="text-sm text-muted-foreground truncate max-w-[300px]">
-                            {property.description}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="capitalize">{property.type}</span>
-                    </TableCell>
-                    <TableCell>{property.bedrooms}</TableCell>
-                    <TableCell>${property.basePrice}/night</TableCell>
+                    <TableCell className="font-medium">{property.name}</TableCell>
+                    <TableCell>{property.location}</TableCell>
+                    <TableCell>${property.pricePerNight}/night</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
+                          <Button variant="ghost" size="icon" disabled={isSubmitting}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(property)} className="cursor-pointer">
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
+                          <DropdownMenuItem onClick={() => handleEdit(property)}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer">
-                            <Eye className="mr-2 h-4 w-4" />
-                            <span>View details</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(property.id)} className="cursor-pointer text-destructive focus:text-destructive">
-                            <Trash className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
+                          <DropdownMenuItem 
+                            onClick={() => handleDelete(property.id)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash className="mr-2 h-4 w-4" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
-                {filteredProperties.length === 0 && !isLoading && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                      No properties found. Try a different search or add a new property.
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           )}
         </CardContent>
+        {properties.length > 0 && (
+          <CardFooter className="border-t px-6 py-3">
+            <p className="text-sm text-gray-500">
+              Showing {filteredProperties.length} of {properties.length} properties
+            </p>
+          </CardFooter>
+        )}
       </Card>
-
+      
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {editingProperty?.id ? 'Edit Property' : 'Add New Property'}
-            </DialogTitle>
+            <DialogTitle>{editingProperty?.id ? 'Edit Property' : 'Add New Property'}</DialogTitle>
             <DialogDescription>
-              {editingProperty?.id 
-                ? 'Update your property information below.'
-                : 'Fill in the details below to create a new property listing.'}
+              {editingProperty?.id ? 'Update your property details.' : 'Add a new property to your portfolio.'}
             </DialogDescription>
           </DialogHeader>
-          
           {editingProperty && (
             <PropertyForm 
               property={editingProperty} 
               onSubmit={handleSubmit} 
+              isSubmitting={isSubmitting}
               onCancel={() => setIsDialogOpen(false)}
             />
           )}

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PropertyFormData } from '@/types/dashboard';
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,7 @@ interface PropertyFormProps {
   property: PropertyFormData;
   onSubmit: (formData: PropertyFormData) => void;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
 const commonAmenities = [
@@ -35,7 +35,7 @@ const commonAmenities = [
   "Garden", "Beach access", "Pet friendly"
 ];
 
-const PropertyForm: React.FC<PropertyFormProps> = ({ property, onSubmit, onCancel }) => {
+const PropertyForm: React.FC<PropertyFormProps> = ({ property, onSubmit, onCancel, isSubmitting = false }) => {
   const [formData, setFormData] = useState<PropertyFormData>({
     ...property
   });
@@ -460,11 +460,18 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ property, onSubmit, onCance
       </div>
       
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">
-          {property.id ? 'Update Property' : 'Create Property'}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <span className="mr-2">{property.id ? 'Updating...' : 'Creating...'}</span>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            </>
+          ) : (
+            property.id ? 'Update Property' : 'Create Property'
+          )}
         </Button>
       </DialogFooter>
     </form>

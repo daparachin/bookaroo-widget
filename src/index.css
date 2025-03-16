@@ -32,6 +32,15 @@
     --input: 214 32% 91%;
     --ring: 221 83% 53%;
     
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-ring: 221 83% 53%;
+    
     --radius: 0.75rem;
   }
 
@@ -63,6 +72,15 @@
     --border: 217 19% 27%;
     --input: 217 19% 27%;
     --ring: 224 76% 48%;
+    
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 217 19% 27%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 19% 27%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-ring: 224 76% 48%;
   }
 }
 
@@ -89,8 +107,12 @@
   }
 }
 
-* {
-  @apply transition-all duration-300 ease-in-out;
+*:not([data-sidebar="sidebar"]) {
+  @apply transition-colors duration-200 ease-in-out;
+}
+
+html, body, main, div:empty {
+  transition: none !important;
 }
 
 ::-webkit-scrollbar {

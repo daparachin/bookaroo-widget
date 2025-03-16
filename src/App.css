@@ -1,8 +1,54 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Remove the default padding and centering from Vite template */
+body #root {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 640px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Improve spacing on mobile */
+  .p-6 {
+    padding: 1rem;
+  }
+  
+  /* Make sure text doesn't overflow on small screens */
+  h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+}
+
+/* Fix for menu transparency */
+[data-sidebar="sidebar"] {
+  background-color: white;
+  backdrop-filter: none;
+}
+
+/* Better header style with solid background */
+header {
+  background-color: white !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure sidebar has proper z-index */
+.sidebar, [data-sidebar="sidebar"] {
+  z-index: 50;
+}
+
+/* Override global transitions for sidebar elements */
+[data-sidebar] * {
+  transition: none !important;
 }
 
 .logo {

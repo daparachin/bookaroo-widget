@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
@@ -38,12 +37,12 @@ const DashboardSidebar: React.FC = () => {
 
   return (
     <Sidebar>
-      <SidebarHeader className="flex items-center h-16 px-6 border-b">
+      <SidebarHeader className="flex items-center h-16 px-6 border-b bg-white">
         <span className="text-xl font-bold">VacationManager</span>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-6 pt-4">Main Menu</SidebarGroupLabel>
           
           <SidebarGroupContent>
             <SidebarMenu>
@@ -53,7 +52,7 @@ const DashboardSidebar: React.FC = () => {
                     <NavLink 
                       to={item.path}
                       className={({ isActive }) => 
-                        isActive ? "!bg-primary/10 !text-primary" : ""
+                        isActive ? "!bg-primary/10 !text-primary font-medium" : "hover:bg-gray-100"
                       }
                     >
                       <item.icon className="h-5 w-5" />
@@ -66,8 +65,8 @@ const DashboardSidebar: React.FC = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t py-4">
-        <NavLink to="/" className="flex items-center px-6 py-2 gap-2 text-sm text-muted-foreground hover:text-foreground">
+      <SidebarFooter className="border-t py-4 bg-white">
+        <NavLink to="/" className="flex items-center px-6 py-2 gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-gray-100">
           <LogOut className="h-4 w-4" />
           <span>Return to Home</span>
         </NavLink>

@@ -1,4 +1,3 @@
-
 // If this file doesn't exist yet, we'll create it with the necessary types
 
 export interface DateRange {
@@ -76,18 +75,26 @@ export interface BookingFormData {
 }
 
 export interface BookingConfirmation {
-  bookingId: string;
+  id?: string;
+  bookingId?: string;
   customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
   propertyName?: string;
   serviceName?: string;
-  date?: string;
+  service?: BookingService;
+  date?: Date | string;
+  time?: string;
   startTime?: string;
   endTime?: string;
   checkInDate?: string;
   checkOutDate?: string;
   guestCount?: number;
   price?: number;
-  totalPrice: number;
+  totalPrice?: number;
+  notes?: string;
+  status?: string;
+  createdAt?: Date;
 }
 
 export interface BookingWidgetProps {

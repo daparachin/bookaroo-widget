@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import i18n from '../i18n';
 
-type Language = 'en' | 'cs';
+type Language = 'en' | 'cs' | 'es' | 'de';
 
 interface LanguageContextType {
   currentLanguage: Language;
@@ -22,7 +21,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Initialize with stored language or default
   useEffect(() => {
     const storedLanguage = localStorage.getItem('language') as Language;
-    if (storedLanguage && (storedLanguage === 'en' || storedLanguage === 'cs')) {
+    if (storedLanguage && (storedLanguage === 'en' || storedLanguage === 'cs' || storedLanguage === 'es' || storedLanguage === 'de')) {
       setCurrentLanguage(storedLanguage);
       i18n.changeLanguage(storedLanguage);
     }

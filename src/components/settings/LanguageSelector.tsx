@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +12,7 @@ const LanguageSelector: React.FC = () => {
   const { currentLanguage, changeLanguage } = useLanguage();
   const [selectedLanguage, setSelectedLanguage] = React.useState(currentLanguage);
 
-  const handleLanguageChange = (language: 'en' | 'cs') => {
+  const handleLanguageChange = (language: 'en' | 'cs' | 'es' | 'de') => {
     setSelectedLanguage(language);
   };
 
@@ -33,7 +32,7 @@ const LanguageSelector: React.FC = () => {
       <CardContent className="space-y-6">
         <RadioGroup 
           value={selectedLanguage} 
-          onValueChange={(value) => handleLanguageChange(value as 'en' | 'cs')}
+          onValueChange={(value) => handleLanguageChange(value as 'en' | 'cs' | 'es' | 'de')}
           className="space-y-3"
         >
           <div className="flex items-center space-x-2">
@@ -44,6 +43,16 @@ const LanguageSelector: React.FC = () => {
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="cs" id="czech" />
             <Label htmlFor="czech">{t('settings.czech')}</Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="es" id="spanish" />
+            <Label htmlFor="spanish">{t('settings.spanish')}</Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="de" id="german" />
+            <Label htmlFor="german">{t('settings.german')}</Label>
           </div>
         </RadioGroup>
         

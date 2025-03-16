@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { 
   LayoutDashboard, 
@@ -25,24 +26,26 @@ import {
 } from "@/components/ui/sidebar";
 
 const DashboardSidebar: React.FC = () => {
+  const { t } = useTranslation();
+  
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Home, label: 'Properties', path: '/dashboard/properties' },
-    { icon: Tag, label: 'Pricing', path: '/dashboard/pricing' },
-    { icon: Calendar, label: 'Calendar', path: '/dashboard/calendar' },
-    { icon: List, label: 'Bookings', path: '/dashboard/bookings' },
-    { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
-    { icon: Code, label: 'Widget', path: '/dashboard/widget' },
+    { icon: LayoutDashboard, label: t('common.dashboard'), path: '/dashboard' },
+    { icon: Home, label: t('common.properties'), path: '/dashboard/properties' },
+    { icon: Tag, label: t('common.pricing'), path: '/dashboard/pricing' },
+    { icon: Calendar, label: t('common.calendar'), path: '/dashboard/calendar' },
+    { icon: List, label: t('common.bookings'), path: '/dashboard/bookings' },
+    { icon: Settings, label: t('common.settings'), path: '/dashboard/settings' },
+    { icon: Code, label: t('common.widget'), path: '/dashboard/widget' },
   ];
 
   return (
     <Sidebar>
       <SidebarHeader className="flex items-center h-16 px-6 border-b bg-white">
-        <span className="text-xl font-bold">VacationManager</span>
+        <span className="text-xl font-bold">{t('dashboard.appName')}</span>
       </SidebarHeader>
       <SidebarContent className="bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-6 pt-4">Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-6 pt-4">{t('dashboard.mainMenu')}</SidebarGroupLabel>
           
           <SidebarGroupContent>
             <SidebarMenu>
@@ -68,7 +71,7 @@ const DashboardSidebar: React.FC = () => {
       <SidebarFooter className="border-t py-4 bg-white">
         <NavLink to="/" className="flex items-center px-6 py-2 gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-gray-100">
           <LogOut className="h-4 w-4" />
-          <span>Return to Home</span>
+          <span>{t('common.returnToHome')}</span>
         </NavLink>
       </SidebarFooter>
     </Sidebar>

@@ -6,6 +6,7 @@ import PropertyBookingWidget from '@/components/booking/PropertyBookingWidget';
 import BookingWidget from '@/components/booking/BookingWidget';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ArrowLeft, Home } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // Mock data for demonstration
 const mockServices: BookingService[] = [
@@ -76,6 +77,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   logo
 }) => {
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   const [bookingComplete, setBookingComplete] = useState(false);
   
   const handleBookingComplete = (confirmation: BookingConfirmation) => {
@@ -90,7 +92,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
           <Link to="/" className="self-start sm:self-auto">
             <Button variant="ghost" className="flex items-center gap-1 px-2 h-8 sm:h-10 sm:px-4 sm:gap-2 text-sm sm:text-base">
               <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="sm:block">{isMobile ? 'Back' : 'Back to Homepage'}</span>
+              <span className="sm:block">{isMobile ? t('booking.back') : t('booking.backToHomepage')}</span>
             </Button>
           </Link>
           
@@ -105,7 +107,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
           ) : (
             <div className="flex-1 flex justify-center">
               <h1 className="text-lg sm:text-2xl font-bold text-center" style={{ color: primaryColor }}>
-                Vacation Rental Booking
+                {t('booking.bookingPageTitle')}
               </h1>
             </div>
           )}
@@ -117,8 +119,8 @@ const BookingPage: React.FC<BookingPageProps> = ({
           {mode === 'service' ? (
             <div className="max-w-xl mx-auto">
               <BookingWidget 
-                title="Book a Service"
-                subtitle="Select a service, date, and time that works for you"
+                title={t('booking.bookServiceTitle')}
+                subtitle={t('booking.bookServiceSubtitle')}
                 services={mockServices}
                 primaryColor={primaryColor}
                 borderRadius="0.75rem"
@@ -128,8 +130,8 @@ const BookingPage: React.FC<BookingPageProps> = ({
             </div>
           ) : (
             <PropertyBookingWidget
-              title="Book Your Stay"
-              subtitle="Select a property, dates, and complete your booking"
+              title={t('booking.bookStayTitle')}
+              subtitle={t('booking.bookStaySubtitle')}
               properties={mockProperties}
               primaryColor={primaryColor}
               borderRadius="0.75rem"
@@ -140,11 +142,11 @@ const BookingPage: React.FC<BookingPageProps> = ({
         </main>
         
         <footer className="text-center text-gray-500 text-xs sm:text-sm py-4">
-          <p>© {new Date().getFullYear()} Vacation Rental Booking. All rights reserved.</p>
+          <p>{t('booking.footerCopyright', { year: new Date().getFullYear() })}</p>
           <div className="flex justify-center gap-2 sm:gap-4 mt-1 sm:mt-2">
-            <a href="#" className="hover:text-gray-700">Terms</a>
-            <a href="#" className="hover:text-gray-700">Privacy</a>
-            <a href="#" className="hover:text-gray-700">Contact</a>
+            <a href="#" className="hover:text-gray-700">{t('booking.terms')}</a>
+            <a href="#" className="hover:text-gray-700">{t('booking.privacy')}</a>
+            <a href="#" className="hover:text-gray-700">{t('booking.contact')}</a>
           </div>
         </footer>
       </div>
